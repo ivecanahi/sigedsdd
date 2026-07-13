@@ -46,6 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (numero_identificacion: string, password: string) => {
     const response = await apiLogin(numero_identificacion, password);
+    localStorage.setItem('authToken', response.token);
+    localStorage.setItem('authUser', JSON.stringify(response.usuario));
     setToken(response.token);
     setUser(response.usuario);
   }, []);
@@ -58,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Ignore errors during logout
       }
     }
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
     setToken(null);
     setUser(null);
   }, [token]);

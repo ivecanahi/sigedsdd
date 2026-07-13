@@ -2,6 +2,9 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import LoginPage from '../features/auth/pages/LoginPage';
 import AuthenticatedLayout from '../features/layout/pages/AuthenticatedLayout';
+import HomeRedirect from '../features/layout/pages/HomeRedirect';
+import InstitucionListPage from '../features/instituciones/pages/InstitucionListPage';
+import MisInstitucionesPage from '../features/instituciones/pages/MisInstitucionesPage';
 
 function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
@@ -27,8 +30,21 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        path: '/',
         element: <AuthenticatedLayout />,
+        children: [
+          {
+            path: '/',
+            element: <HomeRedirect />,
+          },
+          {
+            path: '/instituciones',
+            element: <InstitucionListPage />,
+          },
+          {
+            path: '/mis-instituciones',
+            element: <MisInstitucionesPage />,
+          },
+        ],
       },
     ],
   },

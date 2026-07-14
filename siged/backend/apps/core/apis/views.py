@@ -7,8 +7,9 @@ from rest_framework.views import APIView
 from apps.core.apis.serializers.autenticacion_serializer import AutenticacionSerializer
 from apps.core.apis.serializers.usuario_serializer import UsuarioSerializer
 from apps.core.excepciones import CredencialesInvalidasError, CuentaInactivaError
-from apps.core.permisos import EsAdministrador
+from apps.organizacion.permisos import EsAdministrador
 from apps.core.servicios.autenticacion_servicio import AutenticacionServicio
+from apps.core.servicios.usuario_servicio import UsuarioServicio
 from rest_framework.exceptions import NotAuthenticated
 
 Usuario = get_user_model()
@@ -53,8 +54,6 @@ class UsuarioListView(APIView):
 
     def get(self, request):
         activo = request.query_params.get('activo', None)
-        qs = Usuario.objects.all()
-        if activo is not None:
-            qs = qs.filter(is_active=activo.lower() in ('true', '1'))
-        serializer = UsuarioSerializer(qs.order_by('numero_identificacion'), many=True)
+        usuarios = UsuarioServicio.listar(activo)
+        serializer = UsuarioSerializer(usuarios, many=True)
         return Response(serializer.data)

@@ -9,3 +9,12 @@ export const ROLES = {
   ESTUDIANTE: 'ESTUDIANTE',
   DECE: 'DECE',
 } as const;
+
+export const ROLE_LABELS: Record<string, string> = {
+  [ROLES.ADMINISTRADOR]: 'Administrador',
+  [ROLES.AUTORIDAD_ACADEMICA]: 'Autoridad Académica',
+  [ROLES.DOCENTE]: 'Docente',
+  [ROLES.SECRETARIA]: 'Secretaría',
+  [ROLES.ESTUDIANTE]: 'Estudiante',
+  [ROLES.DECE]: 'DECE',
+};

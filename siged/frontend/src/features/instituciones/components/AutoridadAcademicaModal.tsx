@@ -37,6 +37,7 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formGlobalError, setFormGlobalError] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'toggle' | 'delete'; target: UsuarioRol } | null>(null);
 
   const fetchAsignaciones = useCallback(async () => {
     if (!institucion) return;
@@ -77,7 +78,7 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
 
   const loadRoles = async () => {
     try {
-      const data = await usuarioRolApi.listRoles();
+      const data = await usuarioRolApi.listAllRoles();
       // Filter only AUTORIDAD_ACADEMICA role for this modal
       const autoridadRol = data.find((r) => r.nombre === ROLES.AUTORIDAD_ACADEMICA);
       setRoles(autoridadRol ? [autoridadRol] : []);
@@ -103,26 +104,29 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
     await Promise.all([loadUsuarios(false), loadRoles()]);
   };
 
-  const handleToggle = async (asignacion: UsuarioRol) => {
-    if (!window.confirm(`¿${asignacion.es_activo ? 'Desactivar' : 'Activar'} esta asignación?`)) return;
+  const handleToggle = (asignacion: UsuarioRol) => {
+    setConfirmAction({ type: 'toggle', target: asignacion });
+  };
+
+  const executeConfirm = async () => {
+    if (!confirmAction) return;
+    const { type, target } = confirmAction;
     try {
-      await usuarioRolApi.toggle(asignacion.id, !asignacion.es_activo);
+      if (type === 'toggle') {
+        await usuarioRolApi.toggle(target.id, !target.es_activo);
+      } else {
+        await usuarioRolApi.delete(target.id);
+      }
+      setConfirmAction(null);
       await fetchAsignaciones();
       onUpdate();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cambiar estado');
+      setError(err instanceof Error ? err.message : 'Error al procesar la acción');
     }
   };
 
-  const handleDelete = async (asignacion: UsuarioRol) => {
-    if (!window.confirm('¿Eliminar esta asignación permanentemente?')) return;
-    try {
-      await usuarioRolApi.delete(asignacion.id);
-      await fetchAsignaciones();
-      onUpdate();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al eliminar');
-    }
+  const handleDelete = (asignacion: UsuarioRol) => {
+    setConfirmAction({ type: 'delete', target: asignacion });
   };
 
   const validateForm = (): boolean => {
@@ -178,7 +182,7 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-sm shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-surface rounded-sm shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
@@ -200,6 +204,30 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
           {error && (
             <div className="bg-danger/10 text-danger px-4 py-3 rounded-sm text-sm">
               {error}
+            </div>
+          )}
+
+          {confirmAction && (
+            <div className="bg-warning/10 border border-warning text-warning px-4 py-3 rounded-sm text-sm flex items-center justify-between">
+              <span>
+                {confirmAction.type === 'toggle'
+                  ? `¿${confirmAction.target.es_activo ? 'Desactivar' : 'Activar'} esta asignación?`
+                  : '¿Eliminar esta asignación permanentemente?'}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="px-3 py-1 rounded-sm hover:bg-warning/20 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={executeConfirm}
+                  className="px-3 py-1 bg-danger text-white rounded-sm hover:bg-danger/90 transition-colors font-medium"
+                >
+                  Confirmar
+                </button>
+              </div>
             </div>
           )}
 

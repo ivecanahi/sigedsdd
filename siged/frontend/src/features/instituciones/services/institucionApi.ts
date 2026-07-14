@@ -1,13 +1,6 @@
 import { INSTITUCIONES_ENDPOINT } from '../../../config/endpoints';
+import { getAuthHeaders } from '../../../config/api';
 import type { Institucion, InstitucionFormData, InstitucionListResponse } from '../types/institucion';
-
-function getHeaders(): Record<string, string> {
-  const token = localStorage.getItem('authToken');
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Token ${token}`,
-  };
-}
 
 function buildQueryString(params: Record<string, string | number | undefined>): string {
   const query = new URLSearchParams();
@@ -36,7 +29,7 @@ export const institucionApi = {
     const query = buildQueryString(params || {});
     const response = await fetch(`${INSTITUCIONES_ENDPOINT}${query}`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
     });
     return handleResponse<InstitucionListResponse>(response);
   },
@@ -44,7 +37,7 @@ export const institucionApi = {
   detail: async (id: number): Promise<Institucion> => {
     const response = await fetch(`${INSTITUCIONES_ENDPOINT}${id}/`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
     });
     return handleResponse<Institucion>(response);
   },
@@ -52,7 +45,7 @@ export const institucionApi = {
   create: async (data: InstitucionFormData): Promise<Institucion> => {
     const response = await fetch(INSTITUCIONES_ENDPOINT, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Institucion>(response);
@@ -61,7 +54,7 @@ export const institucionApi = {
   update: async (id: number, data: Partial<InstitucionFormData>): Promise<Institucion> => {
     const response = await fetch(`${INSTITUCIONES_ENDPOINT}${id}/`, {
       method: 'PATCH',
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Institucion>(response);
@@ -70,7 +63,7 @@ export const institucionApi = {
   delete: async (id: number): Promise<void> => {
     const response = await fetch(`${INSTITUCIONES_ENDPOINT}${id}/`, {
       method: 'DELETE',
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
@@ -84,7 +77,7 @@ export const institucionApi = {
   listByUser: async (): Promise<Institucion[]> => {
     const response = await fetch(`${INSTITUCIONES_ENDPOINT}usuario/`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
     });
     return handleResponse<Institucion[]>(response);
   },

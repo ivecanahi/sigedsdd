@@ -21,6 +21,14 @@ class UsuarioDAO:
         return token
 
     @staticmethod
+    def listar(activo=None):
+        """Lista usuarios ordenados por número de identificación."""
+        qs = Usuario.objects.all()
+        if activo is not None:
+            qs = qs.filter(is_active=activo.lower() in ('true', '1'))
+        return qs.order_by('numero_identificacion')
+
+    @staticmethod
     def eliminar_token(usuario):
         """Elimina el token de autenticación de un usuario."""
         Token.objects.filter(user=usuario).delete()

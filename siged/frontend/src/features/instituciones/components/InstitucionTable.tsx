@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import type { Institucion } from '../types/institucion';
-import type { UsuarioRol } from '../types/usuariorol';
 
 interface InstitucionTableProps {
   data: Institucion[];
@@ -8,9 +6,7 @@ interface InstitucionTableProps {
   page: number;
   pageSize: number;
   ordering: string;
-  searchTerm: string;
   onSort: (field: string) => void;
-  onSearch: (term: string) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   onEdit: (institucion: Institucion) => void;
@@ -24,85 +20,65 @@ function getSortIcon(field: string, currentOrdering: string): string {
   return 'unfold_more';
 }
 
-function formatAutoridades(autoridades: UsuarioRol[] | undefined): string {
-  if (!autoridades || autoridades.length === 0) return '—';
-  return autoridades
-    .map((a) => `${a.usuario.first_name} ${a.usuario.last_name}`)
-    .join(', ');
-}
-
 export default function InstitucionTable({
   data,
   count,
   page,
   pageSize,
   ordering,
-  searchTerm,
   onSort,
-  onSearch,
   onPageChange,
   onPageSizeChange,
   onEdit,
   onDelete,
   onManageAuthorities,
 }: InstitucionTableProps) {
-  const [localSearch, setLocalSearch] = useState(searchTerm);
   const totalPages = Math.ceil(count / pageSize);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(localSearch);
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (page <= 4) {
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (page >= totalPages - 3) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = page - 1; i <= page + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
   };
 
   return (
     <div className="space-y-4">
-      {/* Search bar */}
-      <form onSubmit={handleSearchSubmit} className="flex gap-2">
-        <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Buscar por nombre..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-primary text-white rounded-sm hover:bg-primary/90 transition-colors font-medium"
-        >
-          Buscar
-        </button>
-        {searchTerm && (
-          <button
-            type="button"
-            onClick={() => { setLocalSearch(''); onSearch(''); }}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-sm hover:bg-gray-200 transition-colors"
-          >
-            Limpiar
-          </button>
-        )}
-      </form>
-
       {/* Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-sm">
+      <div className="overflow-x-auto border border-slate-200 rounded-sm">
         <table className="w-full text-left">
-          <thead className="bg-gray-50">
+          <thead className="bg-primary text-white">
             <tr>
               <th className="px-4 py-3">
                 <button
                   onClick={() => onSort('nombre')}
-                  className="flex items-center gap-1 font-semibold text-gray-700 hover:text-primary"
+                  className="flex items-center gap-1 font-display font-bold text-[15px] uppercase tracking-wider hover:text-white/90"
                 >
-                  Nombre
+                  Nombre de la institución
                   <span className="material-symbols-outlined text-sm">{getSortIcon('nombre', ordering)}</span>
                 </button>
               </th>
               <th className="px-4 py-3">
                 <button
                   onClick={() => onSort('codigo')}
-                  className="flex items-center gap-1 font-semibold text-gray-700 hover:text-primary"
+                  className="flex items-center gap-1 font-display font-bold text-[15px] uppercase tracking-wider hover:text-white/90"
                 >
                   Código
                   <span className="material-symbols-outlined text-sm">{getSortIcon('codigo', ordering)}</span>
@@ -111,37 +87,57 @@ export default function InstitucionTable({
               <th className="px-4 py-3">
                 <button
                   onClick={() => onSort('ruc')}
-                  className="flex items-center gap-1 font-semibold text-gray-700 hover:text-primary"
+                  className="flex items-center gap-1 font-display font-bold text-[15px] uppercase tracking-wider hover:text-white/90"
                 >
-                  RUC
+                  Ruc
                   <span className="material-symbols-outlined text-sm">{getSortIcon('ruc', ordering)}</span>
                 </button>
               </th>
-              <th className="px-4 py-3 font-semibold text-gray-700">Autoridades Académicas</th>
-              <th className="px-4 py-3 font-semibold text-gray-700 text-right">Acciones</th>
+              <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider">
+                Autoridades académicas
+              </th>
+              <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider text-right">
+                Acciones
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-200">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
                   No se encontraron instituciones.
                 </td>
               </tr>
             ) : (
               data.map((inst) => (
-                <tr key={inst.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{inst.nombre}</td>
-                  <td className="px-4 py-3 text-gray-700">{inst.codigo}</td>
-                  <td className="px-4 py-3 text-gray-700">{inst.ruc}</td>
-                  <td className="px-4 py-3 text-gray-700">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate max-w-[200px]" title={formatAutoridades(inst.autoridades_academicas)}>
-                        {formatAutoridades(inst.autoridades_academicas)}
-                      </span>
+                <tr key={inst.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-slate-900">{inst.nombre}</td>
+                  <td className="px-4 py-3 text-slate-700">{inst.codigo}</td>
+                  <td className="px-4 py-3 text-slate-700">{inst.ruc}</td>
+                  <td className="px-4 py-3 text-slate-700">
+                    <div className="flex items-center gap-2">
+                      {inst.autoridades_academicas && inst.autoridades_academicas.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {inst.autoridades_academicas.slice(0, 2).map((a) => (
+                            <span
+                              key={a.id}
+                              className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                            >
+                              {a.usuario.first_name} {a.usuario.last_name}
+                            </span>
+                          ))}
+                          {inst.autoridades_academicas.length > 2 && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
+                              +{inst.autoridades_academicas.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-sm">—</span>
+                      )}
                       <button
                         onClick={() => onManageAuthorities(inst)}
-                        className="text-primary hover:text-secondary text-sm font-medium whitespace-nowrap"
+                        className="text-primary hover:text-primary/80 text-xs font-medium whitespace-nowrap"
                       >
                         Gestionar
                       </button>
@@ -151,17 +147,15 @@ export default function InstitucionTable({
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => onEdit(inst)}
-                        className="p-1.5 text-primary hover:bg-primary/10 rounded-sm transition-colors"
-                        title="Editar"
+                        className="px-3 py-1.5 rounded-md bg-[#dcfce7] text-[#166534] text-sm font-medium hover:bg-[#d1fae5] transition-colors"
                       >
-                        <span className="material-symbols-outlined text-xl">edit</span>
+                        Editar
                       </button>
                       <button
                         onClick={() => onDelete(inst)}
-                        className="p-1.5 text-danger hover:bg-danger/10 rounded-sm transition-colors"
-                        title="Eliminar"
+                        className="px-3 py-1.5 rounded-md bg-[#fee2e2] text-[#991b1b] text-sm font-medium hover:bg-[#fecaca] transition-colors"
                       >
-                        <span className="material-symbols-outlined text-xl">delete</span>
+                        Eliminar
                       </button>
                     </div>
                   </td>
@@ -175,37 +169,50 @@ export default function InstitucionTable({
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Mostrar</span>
+          <span className="text-sm text-slate-600">Mostrar</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="border border-gray-200 rounded-sm px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="border border-slate-200 rounded-sm px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
           </select>
-          <span className="text-sm text-gray-600">por página</span>
+          <span className="text-sm text-slate-600">por página</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">
-            {count === 0 ? '0' : `${(page - 1) * pageSize + 1} - ${Math.min(page * pageSize, count)}`} de {count}
-          </span>
+        <div className="flex items-center gap-1">
           <button
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            className="p-1 rounded-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700"
           >
-            <span className="material-symbols-outlined">chevron_left</span>
+            <span className="material-symbols-outlined text-sm">chevron_left</span>
           </button>
+          {getPageNumbers().map((p, idx) => (
+            <button
+              key={idx}
+              onClick={() => typeof p === 'number' && onPageChange(p)}
+              disabled={p === '...'}
+              className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-colors ${
+                p === page
+                  ? 'bg-primary text-white'
+                  : p === '...'
+                  ? 'text-slate-400 cursor-default'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
           <button
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
-            className="p-1 rounded-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700"
           >
-            <span className="material-symbols-outlined">chevron_right</span>
+            <span className="material-symbols-outlined text-sm">chevron_right</span>
           </button>
         </div>
       </div>

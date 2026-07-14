@@ -16,7 +16,39 @@ from apps.organizacion.excepciones import (
     InstitucionConDependenciasActivasError,
 )
 from apps.organizacion.models import Institucion, Rol, UsuarioRol
+from apps.organizacion.apis.serializers.asignatura_serializer import (
+    AsignaturaListSerializer,
+    AsignaturaWriteSerializer,
+)
+from apps.organizacion.apis.serializers.educacionnivel_serializer import EducacionNivelSerializer
+from apps.organizacion.apis.serializers.gradoescolar_serializer import (
+    GradoEscolarListSerializer,
+    GradoEscolarWriteSerializer,
+)
+from apps.organizacion.apis.serializers.planestudio_serializer import (
+    PlanEstudioListSerializer,
+    PlanEstudioWriteSerializer,
+)
+from apps.organizacion.daos.asignatura_dao import AsignaturaDAO
+from apps.organizacion.daos.gradoescolar_dao import GradoEscolarDAO
+from apps.organizacion.daos.planestudio_dao import PlanEstudioDAO
+from apps.organizacion.excepciones import (
+    GradoConAsignaturasAsociadasError,
+    PlanConGradosAsociadosError,
+    PlanVigenteExistenteError,
+    SubnivelRequeridoError,
+)
+from apps.organizacion.models import (
+    Asignatura,
+    EducacionNivel,
+    EducacionSubNivel,
+    GradoEscolar,
+    PlanEstudio,
+)
+from apps.organizacion.servicios.asignatura_servicio import AsignaturaServicio
+from apps.organizacion.servicios.gradoescolar_servicio import GradoEscolarServicio
 from apps.organizacion.servicios.institucion_servicio import InstitucionServicio
+from apps.organizacion.servicios.planestudio_servicio import PlanEstudioServicio
 from apps.organizacion.servicios.usuariorol_servicio import UsuarioRolServicio
 
 Usuario = get_user_model()
@@ -636,4 +668,775 @@ class UsuariosEndpointTest(TestCase):
     def test_listar_usuarios_sin_autenticacion(self):
         """Endpoint requiere autenticación."""
         response = self.client.get('/api/usuarios/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PlanEstudioModelTest(TestCase):
+    """Pruebas unitarias para el modelo PlanEstudio."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE Plan',
+            codigo='UE-PLN',
+            ruc='1111111111',
+        )
+
+    def test_crear_plan_estudio(self):
+        plan = PlanEstudio.objects.create(
+            nombre='Plan 2026',
+            es_activo=True,
+            institucion=self.institucion,
+        )
+        self.assertEqual(plan.nombre, 'Plan 2026')
+        self.assertTrue(plan.es_activo)
+
+    def test_unicidad_nombre_por_institucion(self):
+        PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        with self.assertRaises(Exception):
+            PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+
+    def test_unicidad_activo_por_institucion(self):
+        PlanEstudio.objects.create(nombre='Plan A', es_activo=True, institucion=self.institucion)
+        with self.assertRaises(Exception):
+            PlanEstudio.objects.create(nombre='Plan B', es_activo=True, institucion=self.institucion)
+
+
+class GradoEscolarModelTest(TestCase):
+    """Pruebas unitarias para el modelo GradoEscolar."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE Grado',
+            codigo='UE-GRD',
+            ruc='2222222222',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+
+    def test_crear_grado(self):
+        grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+        self.assertEqual(grado.nombre, 'Primero')
+
+    def test_unicidad_nombre_por_plan(self):
+        GradoEscolar.objects.create(nombre='Primero', orden=1, plan_estudio=self.plan, nivel=self.nivel)
+        with self.assertRaises(Exception):
+            GradoEscolar.objects.create(nombre='Primero', orden=2, plan_estudio=self.plan, nivel=self.nivel)
+
+
+class AsignaturaModelTest(TestCase):
+    """Pruebas unitarias para el modelo Asignatura."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE Asig',
+            codigo='UE-ASG',
+            ruc='3333333333',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+
+    def test_crear_asignatura(self):
+        asig = Asignatura.objects.create(
+            nombre='Matemáticas',
+            pp_semana_minimo=5,
+            grado_escolar=self.grado,
+        )
+        self.assertEqual(asig.nombre, 'Matemáticas')
+
+    def test_unicidad_nombre_por_grado(self):
+        Asignatura.objects.create(nombre='Matemáticas', pp_semana_minimo=5, grado_escolar=self.grado)
+        with self.assertRaises(Exception):
+            Asignatura.objects.create(nombre='Matemáticas', pp_semana_minimo=4, grado_escolar=self.grado)
+
+
+class PlanEstudioDAOTest(TestCase):
+    """Pruebas unitarias para PlanEstudioDAO."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE DAO',
+            codigo='UE-DAO',
+            ruc='4444444444',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan DAO', institucion=self.institucion)
+
+    def test_obtener_por_id(self):
+        result = PlanEstudioDAO.obtener_por_id(self.plan.id)
+        self.assertEqual(result.id, self.plan.id)
+
+    def test_existe_nombre(self):
+        self.assertTrue(PlanEstudioDAO.existe_nombre_by_institucion('Plan DAO', self.institucion.id))
+
+    def test_existe_activo(self):
+        self.plan.es_activo = True
+        self.plan.save()
+        self.assertTrue(PlanEstudioDAO.existe_activo_by_institucion(self.institucion.id))
+
+    def test_tiene_grados_false(self):
+        self.assertFalse(PlanEstudioDAO.tiene_grados_asociados(self.plan))
+
+
+class GradoEscolarDAOTest(TestCase):
+    """Pruebas unitarias para GradoEscolarDAO."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE DAO2',
+            codigo='UE-DAO2',
+            ruc='5555555555',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+
+    def test_existe_nombre_by_plan(self):
+        self.assertTrue(GradoEscolarDAO.existe_nombre_by_plan('Primero', self.plan.id))
+
+    def test_tiene_asignaturas_false(self):
+        self.assertFalse(GradoEscolarDAO.tiene_asignaturas_asociadas(self.grado))
+
+
+class AsignaturaDAOTest(TestCase):
+    """Pruebas unitarias para AsignaturaDAO."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE DAO3',
+            codigo='UE-DAO3',
+            ruc='6666666666',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+        self.asignatura = Asignatura.objects.create(
+            nombre='Matemáticas',
+            pp_semana_minimo=5,
+            grado_escolar=self.grado,
+        )
+
+    def test_existe_nombre_by_grado(self):
+        self.assertTrue(AsignaturaDAO.existe_nombre_by_grado('Matemáticas', self.grado.id))
+
+    def test_listar_por_grado(self):
+        resultados = AsignaturaDAO.listar_por_grado(self.grado.id)
+        self.assertEqual(len(resultados), 1)
+
+
+class PlanEstudioServicioTest(TestCase):
+    """Pruebas unitarias para PlanEstudioServicio."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE SRV',
+            codigo='UE-SRV',
+            ruc='7777777777',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan SRV', institucion=self.institucion)
+
+    def test_crear_plan_activo_unico(self):
+        PlanEstudio.objects.create(nombre='Plan A', es_activo=True, institucion=self.institucion)
+        with self.assertRaises(PlanVigenteExistenteError):
+            PlanEstudioServicio.crear({'nombre': 'Plan B', 'es_activo': True, 'institucion': self.institucion})
+
+    def test_eliminar_plan_con_grados(self):
+        nivel = EducacionNivel.objects.create(nombre='Primaria', pp_minutos=40, pp_semana_minimo=25)
+        GradoEscolar.objects.create(nombre='Primero', orden=1, plan_estudio=self.plan, nivel=nivel)
+        with self.assertRaises(PlanConGradosAsociadosError):
+            PlanEstudioServicio.eliminar(self.plan)
+
+    def test_actualizar_a_activo_conflict(self):
+        PlanEstudio.objects.create(nombre='Plan B', es_activo=True, institucion=self.institucion)
+        with self.assertRaises(PlanVigenteExistenteError):
+            PlanEstudioServicio.actualizar(self.plan, {'es_activo': True})
+
+
+class GradoEscolarServicioTest(TestCase):
+    """Pruebas unitarias para GradoEscolarServicio."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE GRD',
+            codigo='UE-GRD',
+            ruc='8888888888',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.subnivel = EducacionSubNivel.objects.create(
+            nombre='Ciclo 1',
+            pp_semana_minimo=22,
+            educacion_nivel=self.nivel,
+        )
+
+    def test_subnivel_requerido(self):
+        with self.assertRaises(SubnivelRequeridoError):
+            GradoEscolarServicio.crear({'nombre': 'Primero', 'orden': 1, 'plan_estudio': self.plan, 'nivel': self.nivel})
+
+    def test_carga_pedagogica_alerta(self):
+        grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+            subnivel=self.subnivel,
+        )
+        Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=grado)
+        result = GradoEscolarServicio.calcular_carga_pedagogica(grado)
+        self.assertEqual(result['carga_pedagogica_actual'], 5)
+        self.assertEqual(result['carga_pedagogica_minima'], 22)
+        self.assertTrue(result['alerta_carga_pedagogica'])
+
+    def test_eliminar_grado_con_asignaturas(self):
+        grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+        Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=grado)
+        with self.assertRaises(GradoConAsignaturasAsociadasError):
+            GradoEscolarServicio.eliminar(grado)
+
+
+class AsignaturaServicioTest(TestCase):
+    """Pruebas unitarias para AsignaturaServicio."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE ASG',
+            codigo='UE-ASG',
+            ruc='9999999999',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+
+    def test_crear_asignatura(self):
+        asig = AsignaturaServicio.crear({'nombre': 'Mat', 'pp_semana_minimo': 5, 'grado_escolar': self.grado})
+        self.assertEqual(asig.nombre, 'Mat')
+
+
+class PlanEstudioSerializerTest(TestCase):
+    """Pruebas unitarias para PlanEstudioSerializer."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE SER',
+            codigo='UE-SER',
+            ruc='0000000001',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+
+    def test_nombre_unico_en_creacion(self):
+        serializer = PlanEstudioWriteSerializer(data={
+            'nombre': 'Plan A',
+            'es_activo': False,
+            'institucion': self.institucion.id,
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('nombre', serializer.errors)
+
+    def test_nombre_unico_en_edicion_excluye_instancia(self):
+        serializer = PlanEstudioWriteSerializer(
+            self.plan,
+            data={'nombre': 'Plan A'},
+            partial=True,
+        )
+        self.assertTrue(serializer.is_valid())
+
+    def test_campos_obligatorios(self):
+        serializer = PlanEstudioWriteSerializer(data={})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('nombre', serializer.errors)
+        self.assertIn('institucion', serializer.errors)
+
+
+class GradoEscolarSerializerTest(TestCase):
+    """Pruebas unitarias para GradoEscolarSerializer."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE SER2',
+            codigo='UE-SER2',
+            ruc='0000000002',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.subnivel = EducacionSubNivel.objects.create(
+            nombre='Ciclo 1',
+            pp_semana_minimo=22,
+            educacion_nivel=self.nivel,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+            subnivel=self.subnivel,
+        )
+
+    def test_nombre_unico_en_creacion(self):
+        serializer = GradoEscolarWriteSerializer(data={
+            'nombre': 'Primero',
+            'orden': 2,
+            'plan_estudio': self.plan.id,
+            'nivel': self.nivel.id,
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('nombre', serializer.errors)
+
+    def test_subnivel_requerido(self):
+        serializer = GradoEscolarWriteSerializer(data={
+            'nombre': 'Segundo',
+            'orden': 2,
+            'plan_estudio': self.plan.id,
+            'nivel': self.nivel.id,
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('subnivel', serializer.errors)
+
+    def test_carga_pedagogica_computed(self):
+        serializer = GradoEscolarListSerializer(self.grado)
+        self.assertEqual(serializer.data['carga_pedagogica_minima'], 22)
+        self.assertEqual(serializer.data['carga_pedagogica_actual'], 0)
+        self.assertTrue(serializer.data['alerta_carga_pedagogica'])
+
+
+class AsignaturaSerializerTest(TestCase):
+    """Pruebas unitarias para AsignaturaSerializer."""
+
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='UE SER3',
+            codigo='UE-SER3',
+            ruc='0000000003',
+        )
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+        self.asignatura = Asignatura.objects.create(
+            nombre='Matemáticas',
+            pp_semana_minimo=5,
+            grado_escolar=self.grado,
+        )
+
+    def test_nombre_unico_en_creacion(self):
+        serializer = AsignaturaWriteSerializer(data={
+            'nombre': 'Matemáticas',
+            'pp_semana_minimo': 4,
+            'grado_escolar': self.grado.id,
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('nombre', serializer.errors)
+
+    def test_campos_obligatorios(self):
+        serializer = AsignaturaWriteSerializer(data={})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('nombre', serializer.errors)
+        self.assertIn('pp_semana_minimo', serializer.errors)
+        self.assertIn('grado_escolar', serializer.errors)
+
+
+class EducacionNivelSerializerTest(TestCase):
+    """Pruebas unitarias para EducacionNivelSerializer."""
+
+    def setUp(self):
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.subnivel = EducacionSubNivel.objects.create(
+            nombre='Ciclo 1',
+            pp_semana_minimo=22,
+            educacion_nivel=self.nivel,
+        )
+
+    def test_nivel_con_subniveles(self):
+        serializer = EducacionNivelSerializer(self.nivel)
+        self.assertEqual(len(serializer.data['subniveles']), 1)
+        self.assertEqual(serializer.data['subniveles'][0]['nombre'], 'Ciclo 1')
+
+
+class PlanEstudioEndpointTest(TestCase):
+    """Pruebas de integración para endpoints de planes de estudio."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = Usuario.objects.create_user(
+            username='admin_plan',
+            email='admin_plan@example.com',
+            password='adminpass',
+            numero_identificacion='00000010',
+            first_name='Admin',
+            last_name='Plan',
+            is_active=True,
+        )
+        self.autoridad_user = Usuario.objects.create_user(
+            username='autoridad_plan',
+            email='autoridad_plan@example.com',
+            password='autoridadpass',
+            numero_identificacion='00000011',
+            first_name='Autoridad',
+            last_name='Plan',
+            is_active=True,
+        )
+        self.rol_admin = Rol.objects.get(nombre=Rol.ADMINISTRADOR)
+        self.rol_autoridad = Rol.objects.get(nombre=Rol.AUTORIDAD_ACADEMICA)
+        self.institucion = Institucion.objects.create(
+            nombre='UE Plan EP',
+            codigo='UE-PL-EP',
+            ruc='1010101010',
+        )
+        UsuarioRol.objects.create(
+            usuario=self.admin_user,
+            rol=self.rol_admin,
+            es_activo=True,
+        )
+        UsuarioRol.objects.create(
+            usuario=self.autoridad_user,
+            rol=self.rol_autoridad,
+            institucion=self.institucion,
+            es_activo=True,
+        )
+        self.admin_token = Token.objects.create(user=self.admin_user)
+        self.autoridad_token = Token.objects.create(user=self.autoridad_user)
+
+    def test_listar_planes_como_autoridad(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/planes-estudio/instituciones/{self.institucion.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+
+    def test_crear_plan_como_autoridad(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.post('/api/planes-estudio/', {
+            'nombre': 'Plan Nuevo',
+            'es_activo': False,
+            'institucion': self.institucion.id,
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['nombre'], 'Plan Nuevo')
+
+    def test_crear_plan_activo_conflict(self):
+        PlanEstudio.objects.create(nombre='Plan A', es_activo=True, institucion=self.institucion)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.post('/api/planes-estudio/', {
+            'nombre': 'Plan B',
+            'es_activo': True,
+            'institucion': self.institucion.id,
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn('non_field_errors', response.data)
+
+    def test_eliminar_plan_con_grados(self):
+        plan = PlanEstudio.objects.create(nombre='Plan Del', institucion=self.institucion)
+        nivel = EducacionNivel.objects.create(nombre='Primaria', pp_minutos=40, pp_semana_minimo=25)
+        GradoEscolar.objects.create(nombre='Primero', orden=1, plan_estudio=plan, nivel=nivel)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.delete(f'/api/planes-estudio/{plan.id}/')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_obtener_detalle_plan(self):
+        plan = PlanEstudio.objects.create(nombre='Plan Det', institucion=self.institucion)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/planes-estudio/{plan.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['nombre'], 'Plan Det')
+
+    def test_actualizar_plan(self):
+        plan = PlanEstudio.objects.create(nombre='Plan Upd', institucion=self.institucion)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.patch(f'/api/planes-estudio/{plan.id}/', {
+            'nombre': 'Plan Actualizado',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['nombre'], 'Plan Actualizado')
+
+    def test_acceso_denegado_otra_institucion(self):
+        otra_institucion = Institucion.objects.create(
+            nombre='UE Otra',
+            codigo='UE-OTR',
+            ruc='2020202020',
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/planes-estudio/instituciones/{otra_institucion.id}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class GradoEscolarEndpointTest(TestCase):
+    """Pruebas de integración para endpoints de grados escolares."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.autoridad_user = Usuario.objects.create_user(
+            username='autoridad_grado',
+            email='autoridad_grado@example.com',
+            password='autoridadpass',
+            numero_identificacion='00000012',
+            first_name='Autoridad',
+            last_name='Grado',
+            is_active=True,
+        )
+        self.rol_autoridad = Rol.objects.get(nombre=Rol.AUTORIDAD_ACADEMICA)
+        self.institucion = Institucion.objects.create(
+            nombre='UE Grado EP',
+            codigo='UE-GR-EP',
+            ruc='3030303030',
+        )
+        UsuarioRol.objects.create(
+            usuario=self.autoridad_user,
+            rol=self.rol_autoridad,
+            institucion=self.institucion,
+            es_activo=True,
+        )
+        self.autoridad_token = Token.objects.create(user=self.autoridad_user)
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.subnivel = EducacionSubNivel.objects.create(
+            nombre='Ciclo 1',
+            pp_semana_minimo=22,
+            educacion_nivel=self.nivel,
+        )
+
+    def test_listar_grados(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/grados-escolares/planes-estudio/{self.plan.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+
+    def test_crear_grado_sin_subnivel(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.post('/api/grados-escolares/', {
+            'nombre': 'Primero',
+            'orden': 1,
+            'plan_estudio': self.plan.id,
+            'nivel': self.nivel.id,
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('subnivel', response.data)
+
+    def test_crear_grado_con_subnivel(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.post('/api/grados-escolares/', {
+            'nombre': 'Primero',
+            'orden': 1,
+            'plan_estudio': self.plan.id,
+            'nivel': self.nivel.id,
+            'subnivel': self.subnivel.id,
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_eliminar_grado_con_asignaturas(self):
+        grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+        Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=grado)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.delete(f'/api/grados-escolares/{grado.id}/')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_obtener_detalle_grado(self):
+        grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+            subnivel=self.subnivel,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/grados-escolares/{grado.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['nombre'], 'Primero')
+
+    def test_actualizar_grado(self):
+        grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+            subnivel=self.subnivel,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.patch(f'/api/grados-escolares/{grado.id}/', {
+            'nombre': 'Segundo',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['nombre'], 'Segundo')
+
+
+class AsignaturaEndpointTest(TestCase):
+    """Pruebas de integración para endpoints de asignaturas."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.autoridad_user = Usuario.objects.create_user(
+            username='autoridad_asig',
+            email='autoridad_asig@example.com',
+            password='autoridadpass',
+            numero_identificacion='00000013',
+            first_name='Autoridad',
+            last_name='Asig',
+            is_active=True,
+        )
+        self.rol_autoridad = Rol.objects.get(nombre=Rol.AUTORIDAD_ACADEMICA)
+        self.institucion = Institucion.objects.create(
+            nombre='UE Asig EP',
+            codigo='UE-AS-EP',
+            ruc='4040404040',
+        )
+        UsuarioRol.objects.create(
+            usuario=self.autoridad_user,
+            rol=self.rol_autoridad,
+            institucion=self.institucion,
+            es_activo=True,
+        )
+        self.autoridad_token = Token.objects.create(user=self.autoridad_user)
+        self.plan = PlanEstudio.objects.create(nombre='Plan A', institucion=self.institucion)
+        self.nivel = EducacionNivel.objects.create(
+            nombre='Primaria',
+            pp_minutos=40,
+            pp_semana_minimo=25,
+        )
+        self.grado = GradoEscolar.objects.create(
+            nombre='Primero',
+            orden=1,
+            plan_estudio=self.plan,
+            nivel=self.nivel,
+        )
+
+    def test_listar_asignaturas(self):
+        Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=self.grado)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/asignaturas/grados-escolares/{self.grado.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_crear_asignatura(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.post('/api/asignaturas/', {
+            'nombre': 'Matemáticas',
+            'pp_semana_minimo': 5,
+            'grado_escolar': self.grado.id,
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['nombre'], 'Matemáticas')
+
+    def test_obtener_detalle_asignatura(self):
+        asig = Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=self.grado)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.get(f'/api/asignaturas/{asig.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['nombre'], 'Mat')
+
+    def test_actualizar_asignatura(self):
+        asig = Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=self.grado)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.patch(f'/api/asignaturas/{asig.id}/', {
+            'nombre': 'Matemáticas Avanzadas',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['nombre'], 'Matemáticas Avanzadas')
+
+    def test_eliminar_asignatura(self):
+        asig = Asignatura.objects.create(nombre='Mat', pp_semana_minimo=5, grado_escolar=self.grado)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.autoridad_token.key}')
+        response = self.client.delete(f'/api/asignaturas/{asig.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class EducacionNivelEndpointTest(TestCase):
+    """Pruebas de integración para endpoint de niveles educativos."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = Usuario.objects.create_user(
+            username='user_nivel',
+            email='user_nivel@example.com',
+            password='userpass',
+            numero_identificacion='00000014',
+            first_name='User',
+            last_name='Nivel',
+            is_active=True,
+        )
+        Token.objects.create(user=self.user)
+
+    def test_listar_niveles_autenticado(self):
+        EducacionNivel.objects.create(nombre='Primaria', pp_minutos=40, pp_semana_minimo=25)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/educacion-niveles/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_listar_niveles_sin_autenticacion(self):
+        response = self.client.get('/api/educacion-niveles/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

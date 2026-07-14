@@ -1,4 +1,5 @@
 import { LOGIN_ENDPOINT, LOGOUT_ENDPOINT } from '../../../config/endpoints';
+import { getAuthHeaders } from '../../../config/api';
 
 export interface LoginResponse {
   token: string;
@@ -40,13 +41,10 @@ export async function login(
   return data;
 }
 
-export async function logout(token: string): Promise<{ mensaje: string }> {
+export async function logout(_token: string): Promise<{ mensaje: string }> {
   const response = await fetch(LOGOUT_ENDPOINT, {
     method: 'POST',
-    headers: {
-      'Authorization': `Token ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
   });
 
   const data = await response.json();

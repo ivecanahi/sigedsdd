@@ -1,22 +1,10 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { ROLES } from '../../../config/app';
 import { useRoles } from '../../../hooks';
 import HomePage from './HomePage';
 
 export default function HomeRedirect() {
-  const navigate = useNavigate();
   const { hasRole, isLoading } = useRoles();
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (hasRole(ROLES.ADMINISTRADOR)) {
-        navigate('/instituciones', { replace: true });
-      } else if (hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
-        navigate('/mis-instituciones', { replace: true });
-      }
-    }
-  }, [isLoading, hasRole, navigate]);
 
   if (isLoading) {
     return (
@@ -26,10 +14,13 @@ export default function HomeRedirect() {
     );
   }
 
-  // If no special role, show the default home page
-  if (!hasRole(ROLES.ADMINISTRADOR) && !hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
-    return <HomePage />;
+  if (hasRole(ROLES.ADMINISTRADOR)) {
+    return <Navigate to="/instituciones" replace />;
   }
 
-  return null;
+  if (hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
+    return <Navigate to="/mis-instituciones" replace />;
+  }
+
+  return <HomePage />;
 }

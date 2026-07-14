@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Django 4.x + DRF (backend), React 19 + Vite + TypeScript + Tailwind CSS v4 (frontend)
+  Architecture: Modular Django apps (core, organizacion) with layered backend (views/serializers/servicios/daos); frontend features-based structure
+  Testing: Django TestCase backend; frontend test runner missing
+  Style: snake_case backend; PascalCase components / camelCase or kebab-case files frontend; Tailwind CSS theme centralized
+  Persistence: SQLite; TokenAuthentication; CORS enabled for localhost:3000
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Respect backend modular structure: apis/, servicios/, daos/, permisos.py, excepciones.py
+    - Respect frontend feature structure: pages/, components/, services/, hooks/, types/, utils/
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns (AGENTS.md conventions)
+    - Backend: views use serializers + servicios + daos; no direct DB access in views
+    - Frontend: centralize endpoints in src/config/endpoints.ts; centralize app constants in src/config/app.ts
+    tdd: false
+    test_command: "cd backend && source .venv/bin/activate && python manage.py test"
+  verify:
+    test_command: "cd backend && source .venv/bin/activate && python manage.py test"
+    build_command: "cd frontend && npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

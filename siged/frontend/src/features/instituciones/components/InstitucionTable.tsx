@@ -1,4 +1,5 @@
 import type { Institucion } from '../types/institucion';
+import { IconButton } from '../../../components/ui';
 
 interface InstitucionTableProps {
   data: Institucion[];
@@ -62,66 +63,66 @@ export default function InstitucionTable({
   return (
     <div className="space-y-4">
       {/* Table */}
-      <div className="overflow-x-auto border border-slate-200 rounded-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left">
-          <thead className="bg-primary text-white">
+          <thead className="bg-slate-50">
             <tr>
               <th className="px-4 py-3">
                 <button
                   onClick={() => onSort('nombre')}
-                  className="flex items-center gap-1 font-display font-bold text-[15px] uppercase tracking-wider hover:text-white/90"
+                  className="flex items-center gap-1 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600 hover:text-slate-900 transition-colors"
                 >
                   Nombre de la institución
-                  <span className="material-symbols-outlined text-sm">{getSortIcon('nombre', ordering)}</span>
+                  <span className="material-symbols-outlined text-[14px]">{getSortIcon('nombre', ordering)}</span>
                 </button>
               </th>
               <th className="px-4 py-3">
                 <button
                   onClick={() => onSort('codigo')}
-                  className="flex items-center gap-1 font-display font-bold text-[15px] uppercase tracking-wider hover:text-white/90"
+                  className="flex items-center gap-1 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600 hover:text-slate-900 transition-colors"
                 >
                   Código
-                  <span className="material-symbols-outlined text-sm">{getSortIcon('codigo', ordering)}</span>
+                  <span className="material-symbols-outlined text-[14px]">{getSortIcon('codigo', ordering)}</span>
                 </button>
               </th>
               <th className="px-4 py-3">
                 <button
                   onClick={() => onSort('ruc')}
-                  className="flex items-center gap-1 font-display font-bold text-[15px] uppercase tracking-wider hover:text-white/90"
+                  className="flex items-center gap-1 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600 hover:text-slate-900 transition-colors"
                 >
-                  Ruc
-                  <span className="material-symbols-outlined text-sm">{getSortIcon('ruc', ordering)}</span>
+                  RUC
+                  <span className="material-symbols-outlined text-[14px]">{getSortIcon('ruc', ordering)}</span>
                 </button>
               </th>
-              <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider">
+              <th className="px-4 py-3 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600">
                 Autoridades académicas
               </th>
-              <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider text-right">
+              <th className="px-4 py-3 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600 text-right">
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-slate-100">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
                   No se encontraron instituciones.
                 </td>
               </tr>
             ) : (
               data.map((inst) => (
                 <tr key={inst.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900">{inst.nombre}</td>
-                  <td className="px-4 py-3 text-slate-700">{inst.codigo}</td>
-                  <td className="px-4 py-3 text-slate-700">{inst.ruc}</td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{inst.nombre}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{inst.codigo}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{inst.ruc}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
                     <div className="flex items-center gap-2">
                       {inst.autoridades_academicas && inst.autoridades_academicas.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {inst.autoridades_academicas.slice(0, 2).map((a) => (
                             <span
                               key={a.id}
-                              className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                              className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 text-xs font-medium ring-1 ring-primary-100"
                             >
                               {a.usuario.first_name} {a.usuario.last_name}
                             </span>
@@ -137,26 +138,28 @@ export default function InstitucionTable({
                       )}
                       <button
                         onClick={() => onManageAuthorities(inst)}
-                        className="text-primary hover:text-primary/80 text-xs font-medium whitespace-nowrap"
+                        className="text-primary-600 hover:text-primary-700 text-xs font-semibold whitespace-nowrap transition-colors focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded"
                       >
                         Gestionar
                       </button>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
+                    <div className="flex items-center justify-end gap-1">
+                      <IconButton
+                        icon="edit"
+                        label="Editar institución"
+                        tone="primary"
+                        size="sm"
                         onClick={() => onEdit(inst)}
-                        className="px-3 py-1.5 rounded-md bg-[#dcfce7] text-[#166534] text-sm font-medium hover:bg-[#d1fae5] transition-colors"
-                      >
-                        Editar
-                      </button>
-                      <button
+                      />
+                      <IconButton
+                        icon="delete"
+                        label="Eliminar institución"
+                        tone="danger"
+                        size="sm"
                         onClick={() => onDelete(inst)}
-                        className="px-3 py-1.5 rounded-md bg-[#fee2e2] text-[#991b1b] text-sm font-medium hover:bg-[#fecaca] transition-colors"
-                      >
-                        Eliminar
-                      </button>
+                      />
                     </div>
                   </td>
                 </tr>
@@ -167,41 +170,42 @@ export default function InstitucionTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600">Mostrar</span>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          <span>Mostrar</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="border border-slate-200 rounded-sm px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
           </select>
-          <span className="text-sm text-slate-600">por página</span>
+          <span>por página</span>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700"
+            className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            aria-label="Página anterior"
           >
-            <span className="material-symbols-outlined text-sm">chevron_left</span>
+            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
           </button>
           {getPageNumbers().map((p, idx) => (
             <button
               key={idx}
               onClick={() => typeof p === 'number' && onPageChange(p)}
               disabled={p === '...'}
-              className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-colors ${
+              className={`inline-flex items-center justify-center size-8 rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                 p === page
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary-600 text-white'
                   : p === '...'
-                  ? 'text-slate-400 cursor-default'
-                  : 'text-slate-700 hover:bg-slate-100'
+                    ? 'text-slate-400 cursor-default'
+                    : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               {p}
@@ -210,9 +214,10 @@ export default function InstitucionTable({
           <button
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700"
+            className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            aria-label="Página siguiente"
           >
-            <span className="material-symbols-outlined text-sm">chevron_right</span>
+            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
           </button>
         </div>
       </div>

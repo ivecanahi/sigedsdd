@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button, ConfirmDialog, Alert, PageHeader, SearchInput } from '../../../components/ui';
+import { Button, ConfirmDialog, Alert, PageHeader, SearchInput, TableSkeleton } from '../../../components/ui';
 import { institucionApi } from '../services/institucionApi';
 import type { Institucion, InstitucionFormData } from '../types/institucion';
 import InstitucionTable from '../components/InstitucionTable';
@@ -156,9 +156,7 @@ export default function InstitucionListPage() {
 
       {/* Table */}
       {isLoading && data.length === 0 ? (
-        <div className="flex items-center justify-center h-64">
-          <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
-        </div>
+        <TableSkeleton rows={5} columns={5} />
       ) : (
         <InstitucionTable
           data={data}

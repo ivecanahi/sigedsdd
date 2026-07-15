@@ -26,13 +26,13 @@
   --color-secondary: #4f00d9;
   --color-accent: #6d5efc;
 
-  /* --- Marca: violeta institucional (navegación) --- */
-  --color-brand-700: #330099;
-  --color-brand-800: #26046f;
-  --color-brand-900: #190449;
-  --color-sidebar: #330099;
-  --color-sidebar-active: #7399ff;
-  --color-sidebar-hover: #6488ee;
+  /* --- Marca: azul institucional profundo (navegación) --- */
+  --color-brand-700: #1e3a5f;
+  --color-brand-800: #152a45;
+  --color-brand-900: #0c1a2b;
+  --color-sidebar: #1e3a5f;
+  --color-sidebar-active: #2a5080;
+  --color-sidebar-hover: #254670;
 
   /* --- Superficies y texto --- */
   --color-background: #f4f5fa;
@@ -206,8 +206,8 @@
   /* Firma visual: trama sutil del panel institucional */
   .brand-weave {
     background-image:
-      radial-gradient(circle at 100% 0%, rgb(115 153 255 / 0.35), transparent 55%),
-      radial-gradient(circle at 0% 100%, rgb(79 0 217 / 0.5), transparent 50%),
+      radial-gradient(circle at 100% 0%, rgb(76 110 245 / 0.25), transparent 55%),
+      radial-gradient(circle at 0% 100%, rgb(30 58 95 / 0.6), transparent 50%),
       linear-gradient(180deg, var(--color-brand-700) 0%, var(--color-brand-900) 100%);
   }
 

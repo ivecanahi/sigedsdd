@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useRoles } from '../hooks';
 import { ROLES } from '../config/app';
+import { Spinner } from '../components/ui';
 import LoginPage from '../features/auth/pages/LoginPage';
 import AuthenticatedLayout from '../features/layout/pages/AuthenticatedLayout';
 import HomeRedirect from '../features/layout/pages/HomeRedirect';
@@ -29,7 +30,7 @@ function RoleRoute({ allowedRoles, children }: { allowedRoles: string[]; childre
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+        <Spinner className="size-8 text-primary" label="Cargando permisos..." />
       </div>
     );
   }

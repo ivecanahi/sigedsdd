@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, ConfirmDialog, Alert, PageHeader, SearchInput } from '../../../components/ui';
+import { Button, ConfirmDialog, Alert, PageHeader, SearchInput, TableSkeleton } from '../../../components/ui';
 import { planEstudioApi } from '../services/planEstudioApi';
 import { gradoEscolarApi } from '../services/gradoEscolarApi';
 import { asignaturaApi } from '../services/asignaturaApi';
@@ -223,9 +223,7 @@ export default function GradoAsignaturaPage() {
           />
 
           {isLoading && grados.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
-            </div>
+            <TableSkeleton rows={5} columns={6} />
           ) : (
             <GradoEscolarTable
               data={grados}

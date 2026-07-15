@@ -18,13 +18,13 @@ export default function AuthenticatedLayout() {
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <TopBar onMenuToggle={() => setSidebarOpen(true)} />
 
-      <main className="flex-grow px-4 py-6 sm:px-6 sm:py-8">
+      <main className="flex-grow px-4 py-6 sm:px-6 sm:py-8 lg:ml-[260px]">
         <div className="mx-auto w-full max-w-[1400px] space-y-6">
           <Outlet />
         </div>
       </main>
 
-      <footer className="border-t border-border px-6 py-5">
+      <footer className="border-t border-border px-6 py-5 lg:ml-[260px]">
         <p className="mx-auto max-w-[1400px] text-center text-xs text-ink-subtle sm:text-left">
           © {new Date().getFullYear()} {APP_NAME}
         </p>

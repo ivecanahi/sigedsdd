@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Asignatura, AsignaturaFormData } from '../types/asignatura';
+import { Alert, Button, EmptyState } from '../../../components/ui';
 import AsignaturaCard from './AsignaturaCard';
 
 interface AsignaturaSectionProps {
@@ -118,50 +119,48 @@ export default function AsignaturaSection({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900">
-            Asignaturas {selectedGradoNombre && `- ${selectedGradoNombre}`}
-          </h3>
+        <h3 className="text-lg font-bold text-slate-900">
+          Asignaturas {selectedGradoNombre && `- ${selectedGradoNombre}`}
+        </h3>
         {!isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
+          <Button icon="add" size="sm" onClick={() => setIsEditing(true)}>
             Nueva Asignatura
-          </button>
+          </Button>
         )}
       </div>
 
-      {globalError && (
-        <div className="bg-danger/10 text-danger px-4 py-3 rounded-sm text-sm">
+      {globalError && !deleteTarget && (
+        <Alert tone="danger" title="Error" onDismiss={() => setGlobalError(null)}>
           {globalError}
-        </div>
+        </Alert>
       )}
 
       {deleteTarget && (
-        <div className="bg-warning/10 border border-warning text-warning px-4 py-3 rounded-sm text-sm flex items-center justify-between">
-          <span>Eliminar asignatura &quot;{deleteTarget.nombre}&quot;?</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDeleteTarget(null)}
-              className="px-3 py-1 rounded-sm hover:bg-warning/20 transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="px-3 py-1 bg-danger text-white rounded-sm hover:bg-danger/90 transition-colors font-medium"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
+        <Alert
+          tone="warning"
+          title="Confirmar eliminación"
+          action={
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(null)}>
+                Cancelar
+              </Button>
+              <Button variant="danger" size="sm" onClick={confirmDelete}>
+                Eliminar
+              </Button>
+            </div>
+          }
+        >
+          ¿Eliminar asignatura &quot;{deleteTarget.nombre}&quot;? Esta acción no se puede deshacer.
+        </Alert>
       )}
 
       {isEditing && (
-        <form onSubmit={handleSubmit} className="bg-slate-50 border border-slate-200 rounded-sm p-4 space-y-3">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4"
+        >
           <div>
-            <label htmlFor="asig-nombre" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="asig-nombre" className="block text-sm font-medium text-slate-700 mb-1">
               Nombre <span className="text-danger">*</span>
             </label>
             <input
@@ -169,14 +168,14 @@ export default function AsignaturaSection({
               type="text"
               value={formData.nombre}
               onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary ${
-                errors.nombre ? 'border-danger' : 'border-gray-200'
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm ${
+                errors.nombre ? 'border-danger' : 'border-slate-200'
               }`}
             />
             {errors.nombre && <p className="mt-1 text-sm text-danger">{errors.nombre[0]}</p>}
           </div>
           <div>
-            <label htmlFor="asig-pp" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="asig-pp" className="block text-sm font-medium text-slate-700 mb-1">
               Carga Semanal Mínima <span className="text-danger">*</span>
             </label>
             <input
@@ -185,36 +184,36 @@ export default function AsignaturaSection({
               min={0}
               value={formData.pp_semana_minimo}
               onChange={(e) => setFormData((prev) => ({ ...prev, pp_semana_minimo: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary ${
-                errors.pp_semana_minimo ? 'border-danger' : 'border-gray-200'
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm ${
+                errors.pp_semana_minimo ? 'border-danger' : 'border-slate-200'
               }`}
             />
-            {errors.pp_semana_minimo && <p className="mt-1 text-sm text-danger">{errors.pp_semana_minimo[0]}</p>}
+            {errors.pp_semana_minimo && (
+              <p className="mt-1 text-sm text-danger">{errors.pp_semana_minimo[0]}</p>
+            )}
           </div>
           <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-sm transition-colors text-sm font-medium"
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-primary text-white rounded-sm hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-60"
-            >
-              {isSubmitting ? 'Guardando...' : editingAsignatura ? 'Actualizar' : 'Crear'}
-            </button>
+            </Button>
+            <Button type="submit" size="sm" loading={isSubmitting}>
+              {editingAsignatura ? 'Actualizar' : 'Crear'}
+            </Button>
           </div>
         </form>
       )}
 
       <div className="space-y-2">
         {asignaturas.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-sm p-6 text-center text-slate-500 text-sm">
-            No hay asignaturas para este grado. Haga clic en &quot;Nueva Asignatura&quot; para agregar una.
-          </div>
+          <EmptyState
+            icon="auto_stories"
+            title="No hay asignaturas"
+            description={
+              selectedGradoNombre
+                ? `Seleccione un grado y haga clic en "Nueva Asignatura" para agregar una.`
+                : 'Seleccione un grado escolar para ver sus asignaturas.'
+            }
+          />
         ) : (
           asignaturas.map((asignatura) => (
             <AsignaturaCard

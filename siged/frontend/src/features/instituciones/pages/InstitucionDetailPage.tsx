@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, Button, EmptyState, PageHeader } from '../../../components/ui';
+import { Alert, Button, EmptyState, PageHeader, Spinner } from '../../../components/ui';
 import { institucionApi } from '../services/institucionApi';
 import type { Institucion } from '../types/institucion';
 
@@ -31,7 +31,7 @@ export default function InstitucionDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+        <Spinner className="size-8 text-primary" label="Cargando institución..." />
       </div>
     );
   }
@@ -76,41 +76,41 @@ export default function InstitucionDetailPage() {
       {/* Info cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Basic info */}
-        <div className="bg-surface border border-border rounded-xl p-6 shadow-card">
-          <h3 className="text-lg font-bold text-ink mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">domain</span>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary-600">domain</span>
             Datos Generales
           </h3>
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-bold text-ink-subtle uppercase tracking-wider mb-1">Nombre</p>
-              <p className="text-sm text-ink font-medium">{institucion.nombre}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre</p>
+              <p className="text-sm text-slate-900 font-medium">{institucion.nombre}</p>
             </div>
             <div>
-              <p className="text-xs font-bold text-ink-subtle uppercase tracking-wider mb-1">Código AMIE</p>
-              <p className="text-sm text-ink font-medium">{institucion.codigo}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Código AMIE</p>
+              <p className="text-sm text-slate-900 font-medium">{institucion.codigo}</p>
             </div>
             <div>
-              <p className="text-xs font-bold text-ink-subtle uppercase tracking-wider mb-1">RUC</p>
-              <p className="text-sm text-ink font-medium">{institucion.ruc}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">RUC</p>
+              <p className="text-sm text-slate-900 font-medium">{institucion.ruc}</p>
             </div>
           </div>
         </div>
 
         {/* Timestamps */}
-        <div className="bg-surface border border-border rounded-xl p-6 shadow-card">
-          <h3 className="text-lg font-bold text-ink mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">schedule</span>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary-600">schedule</span>
             Registro Temporal
           </h3>
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-bold text-ink-subtle uppercase tracking-wider mb-1">Fecha de Creación</p>
-              <p className="text-sm text-ink font-medium">{formatDate(institucion.fecha_creacion)}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha de Creación</p>
+              <p className="text-sm text-slate-900 font-medium">{formatDate(institucion.fecha_creacion)}</p>
             </div>
             <div>
-              <p className="text-xs font-bold text-ink-subtle uppercase tracking-wider mb-1">Última Actualización</p>
-              <p className="text-sm text-ink font-medium">{formatDate(institucion.fecha_actualizacion)}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Última Actualización</p>
+              <p className="text-sm text-slate-900 font-medium">{formatDate(institucion.fecha_actualizacion)}</p>
             </div>
           </div>
         </div>
@@ -118,54 +118,54 @@ export default function InstitucionDetailPage() {
 
       {/* Academic authorities */}
       {institucion.autoridades_academicas && institucion.autoridades_academicas.length > 0 && (
-        <div className="bg-surface border border-border rounded-xl p-6 shadow-card">
-          <h3 className="text-lg font-bold text-ink mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">badge</span>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary-600">badge</span>
             Autoridades Académicas
           </h3>
-          <div className="overflow-x-auto border border-border rounded-xl">
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-left">
-              <thead className="bg-primary-700 text-white">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider">
+                  <th className="px-4 py-3 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600">
                     Usuario
                   </th>
-                  <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider">
+                  <th className="px-4 py-3 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600">
                     Rol
                   </th>
-                  <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider">
+                  <th className="px-4 py-3 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600">
                     Estado
                   </th>
-                  <th className="px-4 py-3 font-display font-bold text-[15px] uppercase tracking-wider">
+                  <th className="px-4 py-3 font-display text-[11px] font-bold tracking-wider uppercase text-slate-600">
                     Desde
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-slate-100">
                 {institucion.autoridades_academicas.map((aut) => (
-                  <tr key={aut.id} className="hover:bg-surface-muted transition-colors">
-                    <td className="px-4 py-3 text-ink font-medium">
+                  <tr key={aut.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">
                       {aut.usuario?.first_name} {aut.usuario?.last_name}
-                      <span className="block text-xs text-ink-muted">@{aut.usuario?.username}</span>
+                      <span className="block text-xs text-slate-500">@{aut.usuario?.username}</span>
                     </td>
-                    <td className="px-4 py-3 text-ink-muted">
+                    <td className="px-4 py-3 text-sm text-slate-600">
                       {aut.rol?.nombre_display || aut.rol?.nombre}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-bold ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ${
                           aut.es_activo
-                            ? 'bg-success-soft text-success'
-                            : 'bg-slate-100 text-ink-muted'
+                            ? 'bg-green-50 text-green-700 ring-green-100'
+                            : 'bg-slate-100 text-slate-600 ring-slate-200'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-xs">
+                        <span className="material-symbols-outlined text-[14px]">
                           {aut.es_activo ? 'check_circle' : 'cancel'}
                         </span>
                         {aut.es_activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-ink-muted text-sm">
+                    <td className="px-4 py-3 text-sm text-slate-600">
                       {aut.fecha_desde ? formatDate(aut.fecha_desde) : '—'}
                     </td>
                   </tr>

@@ -141,7 +141,10 @@ export default function GradoEscolarTable({
                   <td className="px-4 py-3 text-sm text-slate-600">{grado.subnivel?.nombre || '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">
                     <div className="flex items-center gap-2">
-                      <span className="tabular">{grado.carga_pedagogica_total}</span>
+                      <span className="tabular font-medium text-slate-700">{grado.carga_pedagogica_actual}</span>
+                      <span className="text-slate-300">/</span>
+                      <span className="tabular text-slate-400">{grado.carga_pedagogica_minima}</span>
+                      <span className="text-xs text-slate-400">h</span>
                       {grado.alerta_carga_pedagogica && (
                         <span className="material-symbols-outlined text-danger text-sm" aria-label="Alerta de carga">warning</span>
                       )}

@@ -246,7 +246,7 @@ export default function GradoAsignaturaPage() {
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <AsignaturaSection
             asignaturas={asignaturas}
-            selectedGradoNombre={selectedGrado?.nombre || null}
+            selectedGrado={selectedGrado}
             hasGrados={grados.length > 0}
             onCreate={handleCreateAsignatura}
             onUpdate={handleUpdateAsignatura}

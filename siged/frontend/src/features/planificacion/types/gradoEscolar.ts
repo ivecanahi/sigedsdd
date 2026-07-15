@@ -10,7 +10,8 @@ export interface GradoEscolar {
     nombre: string;
     orden: number;
   } | null;
-  carga_pedagogica_total: number;
+  carga_pedagogica_actual: number;
+  carga_pedagogica_minima: number;
   alerta_carga_pedagogica: boolean;
   plan_estudio: number;
   fecha_creacion: string;

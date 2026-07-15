@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { Asignatura, AsignaturaFormData } from '../types/asignatura';
+import type { GradoEscolar } from '../types/gradoEscolar';
 import { Alert, Button, EmptyState, Icon } from '../../../components/ui';
 import AsignaturaCard from './AsignaturaCard';
 
 interface AsignaturaSectionProps {
   asignaturas: Asignatura[];
-  selectedGradoNombre: string | null;
+  selectedGrado: GradoEscolar | null;
   hasGrados: boolean;
   onCreate: (data: AsignaturaFormData) => Promise<void>;
   onUpdate: (id: number, data: Partial<AsignaturaFormData>) => Promise<void>;
@@ -21,7 +22,7 @@ interface FormErrors {
 
 export default function AsignaturaSection({
   asignaturas,
-  selectedGradoNombre,
+  selectedGrado,
   hasGrados,
   onCreate,
   onUpdate,
@@ -119,27 +120,105 @@ export default function AsignaturaSection({
   };
 
   const formDisabled = !hasGrados;
+  const selectedGradoNombre = selectedGrado?.nombre || null;
+
+  // Carga pedagógica calculation
+  const cargaActual = selectedGrado?.carga_pedagogica_actual ?? 0;
+  const cargaMinima = selectedGrado?.carga_pedagogica_minima ?? 0;
+  const cargaRemaining = Math.max(0, cargaMinima - cargaActual);
+  const isMaxedOut = cargaMinima > 0 && cargaActual >= cargaMinima;
+  const showCapacityInfo = selectedGrado && cargaMinima > 0 && !formDisabled;
+
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.nombre.trim()) newErrors.nombre = ['Este campo es obligatorio.'];
+    const numVal = Number(formData.pp_semana_minimo);
+    if (!formData.pp_semana_minimo.trim() || isNaN(numVal) || numVal < 0) {
+      newErrors.pp_semana_minimo = ['Debe ser un número positivo.'];
+      setErrors(newErrors);
+      return false;
+    }
+
+    // Carga pedagógica: block if new asignatura exceeds remaining capacity
+    if (!editingAsignatura && cargaRemaining > 0 && numVal > cargaRemaining) {
+      newErrors.pp_semana_minimo = [
+        'La carga horaria ingresada supera el límite del grado. Horas disponibles: ' + cargaRemaining + 'h.'
+      ];
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900">
-          Asignaturas {selectedGradoNombre && `- ${selectedGradoNombre}`}
-        </h3>
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-bold text-slate-900">
+            Asignaturas {selectedGradoNombre && (
+              <span className="text-primary-600">— {selectedGradoNombre}</span>
+            )}
+          </h3>
+
+          {/* Capacity info banner */}
+          {showCapacityInfo && (
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="tabular font-medium text-slate-700">{cargaActual}h</span>
+                <span className="text-slate-300">/</span>
+                <span className="tabular text-slate-400">{cargaMinima}h</span>
+              </div>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                isMaxedOut
+                  ? 'bg-success/10 text-success'
+                  : cargaRemaining > 0
+                    ? 'bg-amber-50 text-amber-700'
+                    : 'bg-slate-100 text-slate-500'
+              }`}>
+                {isMaxedOut
+                  ? 'Carga completa'
+                  : cargaRemaining > 0
+                    ? `${cargaRemaining}h disponible${cargaRemaining !== 1 ? 's' : ''}`
+                    : 'Sin límite'}
+              </span>
+            </div>
+          )}
+        </div>
         {!isEditing && (
-          <Button icon="add" size="sm" onClick={() => setIsEditing(true)} disabled={formDisabled}>
-            Nueva Asignatura
+          <Button
+            icon="add"
+            size="sm"
+            onClick={() => setIsEditing(true)}
+            disabled={formDisabled || isMaxedOut}
+            title={isMaxedOut ? 'La carga pedagógica del grado ya está completa' : undefined}
+          >
+            {isMaxedOut ? 'Completo' : 'Nueva Asignatura'}
           </Button>
         )}
       </div>
 
+      {/* Capacidad al máximo: info */}
+      {!formDisabled && isMaxedOut && (
+        <div className="rounded-lg border border-dashed border-green-300 bg-green-50/50 p-4 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <Icon name="check_circle" className="text-[24px] text-success" />
+            <p className="text-sm font-semibold text-green-700">
+              La carga pedagógica de este grado ({cargaActual}h/{cargaMinima}h) ya está completa.
+            </p>
+            <p className="text-xs text-green-600">
+              Elimine o reduzca horas de asignaturas existentes para agregar más.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Blocked state: no grados registered */}
-      {formDisabled && (
+      {formDisabled && !selectedGrado && (
         <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50/50 p-4 text-center">
           <div className="flex flex-col items-center gap-2">
             <Icon name="info" className="text-[24px] text-amber-500" />
             <p className="text-sm font-semibold text-amber-800">
-              Debe registrar al menos un Grado Escolar antes de poder crear Asignaturas.
+              Debe registrar y seleccionar al menos un Grado Escolar para gestionar sus asignaturas.
             </p>
             <p className="text-xs text-amber-600">
               Use la sección &quot;Grados Escolares&quot; de la izquierda para crear el primer grado.
@@ -225,13 +304,13 @@ export default function AsignaturaSection({
       )}
 
       <div className="space-y-2">
-        {asignaturas.length === 0 ? (
+        {!formDisabled && asignaturas.length === 0 && !isMaxedOut ? (
           <EmptyState
             icon="auto_stories"
             title="No hay asignaturas"
             description={
               selectedGradoNombre
-                ? `Seleccione un grado y haga clic en "Nueva Asignatura" para agregar una.`
+                ? 'Haga clic en "Nueva Asignatura" para agregar una a este grado.'
                 : 'Seleccione un grado escolar para ver sus asignaturas.'
             }
           />

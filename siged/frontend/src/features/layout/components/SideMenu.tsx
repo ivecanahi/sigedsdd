@@ -59,30 +59,26 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
   const buildSections = (): MenuSection[] => {
     const sections: MenuSection[] = [];
 
-    // Dashboard
-    sections.push({
-      items: [
-        {
-          icon: 'home',
-          label: 'Dashboard',
-          path: '/',
-        },
-      ],
-    });
+    // Navegación principal (sin header de sección)
+    const mainItems: MenuLink[] = [
+      {
+        icon: 'home',
+        label: 'Dashboard',
+        path: '/',
+      },
+    ];
 
-    // Acceso Institucional (vista de usuario)
-    const accessItems: MenuLink[] = [];
+    // Mis instituciones (visible para admin y autoridad académica)
     if (hasRole(ROLES.ADMINISTRADOR) || hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
-      accessItems.push({
+      mainItems.push({
         icon: 'domain',
         label: 'Mis instituciones',
         path: '/mis-instituciones',
         requiredRoles: [ROLES.ADMINISTRADOR, ROLES.AUTORIDAD_ACADEMICA],
       });
     }
-    if (accessItems.length > 0) {
-      sections.push({ title: 'Acceso Institucional', items: accessItems });
-    }
+
+    sections.push({ items: mainItems });
 
     // Administración
     const adminItems: MenuLink[] = [];

@@ -70,17 +70,6 @@ export default function AsignaturaSection({
     }
   };
 
-  const validate = (): boolean => {
-    const newErrors: FormErrors = {};
-    if (!formData.nombre.trim()) newErrors.nombre = ['Este campo es obligatorio.'];
-    if (!formData.pp_semana_minimo.trim()) newErrors.pp_semana_minimo = ['Este campo es obligatorio.'];
-    const numVal = Number(formData.pp_semana_minimo);
-    if (isNaN(numVal) || numVal < 0) newErrors.pp_semana_minimo = ['Debe ser un número positivo.'];
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;

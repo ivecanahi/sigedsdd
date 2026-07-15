@@ -70,6 +70,20 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
       ],
     });
 
+    // Acceso Institucional (vista de usuario)
+    const accessItems: MenuLink[] = [];
+    if (hasRole(ROLES.ADMINISTRADOR) || hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
+      accessItems.push({
+        icon: 'domain',
+        label: 'Mis instituciones',
+        path: '/mis-instituciones',
+        requiredRoles: [ROLES.ADMINISTRADOR, ROLES.AUTORIDAD_ACADEMICA],
+      });
+    }
+    if (accessItems.length > 0) {
+      sections.push({ title: 'Acceso Institucional', items: accessItems });
+    }
+
     // Administración
     const adminItems: MenuLink[] = [];
     if (hasRole(ROLES.ADMINISTRADOR)) {

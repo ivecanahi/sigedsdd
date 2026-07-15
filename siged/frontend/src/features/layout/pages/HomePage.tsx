@@ -1,8 +1,14 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { APP_NAME, ROLES } from '../../../config/app';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useRoles } from '../../../hooks';
-import { PageHeader, Icon, Badge } from '../../../components/ui';
+import { useInstitucion } from '../../instituciones/context/InstitucionContext';
+import { PageHeader, Icon, Badge, Spinner } from '../../../components/ui';
+import { institucionApi } from '../../instituciones/services/institucionApi';
+import { planEstudioApi } from '../../planificacion/services/planEstudioApi';
+import { gradoEscolarApi } from '../../planificacion/services/gradoEscolarApi';
+import { asignaturaApi } from '../../planificacion/services/asignaturaApi';
 
 interface StatCardProps {
   icon: string;
@@ -64,10 +70,93 @@ function QuickActionCard({ icon, title, description, onClick }: QuickActionCardP
 export default function HomePage() {
   const { user } = useAuth();
   const { hasRole } = useRoles();
+  const { institucionId } = useInstitucion();
   const navigate = useNavigate();
+
+  const [stats, setStats] = useState({
+    instituciones: 0,
+    planes: 0,
+    grados: 0,
+    asignaturas: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const firstName = user?.first_name || 'Usuario';
   const fullName = user ? `${user.first_name} ${user.last_name}` : 'Usuario';
+
+  useEffect(() => {
+    async function fetchStats() {
+      setStatsLoading(true);
+      try {
+        let institucionesCount = 0;
+        let planesCount = 0;
+        let gradosCount = 0;
+        let asignaturasCount = 0;
+
+        // 1. Instituciones count (global for the user)
+        if (hasRole(ROLES.ADMINISTRADOR)) {
+          const response = await institucionApi.list({ page: 1, page_size: 1 });
+          institucionesCount = response.count;
+        } else if (hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
+          const data = await institucionApi.listByUser();
+          institucionesCount = data.length;
+        }
+
+        // 2. Institution-specific stats (only if an institution is active)
+        if (institucionId) {
+          const plansResponse = await planEstudioApi.listByInstitucion(institucionId, {
+            page: 1,
+            page_size: 1,
+          });
+          planesCount = plansResponse.count;
+
+          // Get all plans to count their grados
+          const allPlans = await planEstudioApi.listByInstitucion(institucionId, {
+            page: 1,
+            page_size: 100,
+          });
+
+          // Fetch grados for each plan
+          const gradoPromises = allPlans.results.map((plan) =>
+            gradoEscolarApi.listByPlanEstudio(plan.id, { page: 1, page_size: 1 })
+          );
+          const gradoResults = await Promise.all(gradoPromises);
+          gradosCount = gradoResults.reduce((sum, res) => sum + res.count, 0);
+
+          // Fetch asignaturas for each plan (through first grado of each plan)
+          // Note: asignaturas are per-grado, so this is a simplification
+          // We'll count asignaturas from the first grado of each plan
+          const asignaturaPromises: Promise<any>[] = [];
+          for (const plan of allPlans.results) {
+            const gradosRes = await gradoEscolarApi.listByPlanEstudio(plan.id, {
+              page: 1,
+              page_size: 100,
+            });
+            for (const grado of gradosRes.results) {
+              asignaturaPromises.push(
+                asignaturaApi.listByGradoEscolar(grado.id).then((asigs) => asigs.length)
+              );
+            }
+          }
+          const asignaturaCounts = await Promise.all(asignaturaPromises);
+          asignaturasCount = asignaturaCounts.reduce((sum, count) => sum + count, 0);
+        }
+
+        setStats({
+          instituciones: institucionesCount,
+          planes: planesCount,
+          grados: gradosCount,
+          asignaturas: asignaturasCount,
+        });
+      } catch {
+        // Silently fail - stats are decorative, not critical
+      } finally {
+        setStatsLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, [hasRole, institucionId]);
 
   return (
     <div className="space-y-8">
@@ -78,12 +167,18 @@ export default function HomePage() {
       />
 
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon="account_balance" label="Instituciones" value="0" tone="primary" />
-        <StatCard icon="menu_book" label="Planes de estudio activos" value="0" tone="success" />
-        <StatCard icon="class" label="Grados escolares" value="0" tone="warning" />
-        <StatCard icon="auto_stories" label="Asignaturas" value="0" tone="danger" />
-      </div>
+      {statsLoading ? (
+        <div className="flex items-center justify-center h-24">
+          <Spinner className="size-8 text-primary" label="Cargando estadísticas..." />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard icon="account_balance" label="Instituciones" value={String(stats.instituciones)} tone="primary" />
+          <StatCard icon="menu_book" label="Planes de estudio" value={String(stats.planes)} tone="success" />
+          <StatCard icon="class" label="Grados escolares" value={String(stats.grados)} tone="warning" />
+          <StatCard icon="auto_stories" label="Asignaturas" value={String(stats.asignaturas)} tone="danger" />
+        </div>
+      )}
 
       {/* Quick actions */}
       <div>

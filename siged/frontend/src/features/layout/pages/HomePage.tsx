@@ -93,16 +93,7 @@ export default function HomePage() {
         let gradosCount = 0;
         let asignaturasCount = 0;
 
-        // 1. Instituciones count (global for the user)
-        if (hasRole(ROLES.ADMINISTRADOR)) {
-          const response = await institucionApi.list({ page: 1, page_size: 1 });
-          institucionesCount = response.count;
-        } else if (hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
-          const data = await institucionApi.listByUser();
-          institucionesCount = data.length;
-        }
-
-        // 2. Institution-specific stats (only if an institution is active)
+        // 1. Institution-specific stats (institution is active)
         if (institucionId) {
           const plansResponse = await planEstudioApi.listByInstitucion(institucionId, {
             page: 1,
@@ -110,22 +101,17 @@ export default function HomePage() {
           });
           planesCount = plansResponse.count;
 
-          // Get all plans to count their grados
           const allPlans = await planEstudioApi.listByInstitucion(institucionId, {
             page: 1,
             page_size: 100,
           });
 
-          // Fetch grados for each plan
           const gradoPromises = allPlans.results.map((plan) =>
             gradoEscolarApi.listByPlanEstudio(plan.id, { page: 1, page_size: 1 })
           );
           const gradoResults = await Promise.all(gradoPromises);
           gradosCount = gradoResults.reduce((sum, res) => sum + res.count, 0);
 
-          // Fetch asignaturas for each plan (through first grado of each plan)
-          // Note: asignaturas are per-grado, so this is a simplification
-          // We'll count asignaturas from the first grado of each plan
           const asignaturaPromises: Promise<any>[] = [];
           for (const plan of allPlans.results) {
             const gradosRes = await gradoEscolarApi.listByPlanEstudio(plan.id, {
@@ -140,6 +126,46 @@ export default function HomePage() {
           }
           const asignaturaCounts = await Promise.all(asignaturaPromises);
           asignaturasCount = asignaturaCounts.reduce((sum, count) => sum + count, 0);
+        }
+
+        // 2. Global counts (always)
+        if (hasRole(ROLES.ADMINISTRADOR)) {
+          const response = await institucionApi.list({ page: 1, page_size: 1 });
+          institucionesCount = response.count;
+        } else if (hasRole(ROLES.AUTORIDAD_ACADEMICA)) {
+          const data = await institucionApi.listByUser();
+          institucionesCount = data.length;
+
+          // Aggregate across all user's institutions
+          if (!institucionId && data.length > 0) {
+            const instPlansPromises = data.map((inst) =>
+              planEstudioApi.listByInstitucion(inst.id, { page: 1, page_size: 100 })
+            );
+            const instPlansResults = await Promise.all(instPlansPromises);
+            planesCount = instPlansResults.reduce((sum, r) => sum + r.count, 0);
+
+            const allInstPlans = instPlansResults.flatMap((r) => r.results);
+            const instGradoPromises = allInstPlans.map((plan) =>
+              gradoEscolarApi.listByPlanEstudio(plan.id, { page: 1, page_size: 1 })
+            );
+            const instGradoResults = await Promise.all(instGradoPromises);
+            gradosCount = instGradoResults.reduce((sum, r) => sum + r.count, 0);
+
+            const instAsigPromises: Promise<any>[] = [];
+            for (const plan of allInstPlans) {
+              const gradosRes = await gradoEscolarApi.listByPlanEstudio(plan.id, {
+                page: 1,
+                page_size: 100,
+              });
+              for (const grado of gradosRes.results) {
+                instAsigPromises.push(
+                  asignaturaApi.listByGradoEscolar(grado.id).then((asigs) => asigs.length)
+                );
+              }
+            }
+            const instAsigCounts = await Promise.all(instAsigPromises);
+            asignaturasCount = instAsigCounts.reduce((sum, c) => sum + c, 0);
+          }
         }
 
         setStats({

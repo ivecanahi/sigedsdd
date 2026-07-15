@@ -79,9 +79,11 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
   const loadRoles = async () => {
     try {
       const data = await usuarioRolApi.listAllRoles();
-      // Filter only AUTORIDAD_ACADEMICA role for this modal
-      const autoridadRol = data.find((r) => r.nombre === ROLES.AUTORIDAD_ACADEMICA);
-      setRoles(autoridadRol ? [autoridadRol] : []);
+      // Show ADMINISTRADOR and AUTORIDAD_ACADEMICA roles
+      const allowedRoles = data.filter((r) =>
+        r.nombre === ROLES.ADMINISTRADOR || r.nombre === ROLES.AUTORIDAD_ACADEMICA
+      );
+      setRoles(allowedRoles);
     } catch (err) {
       setFormGlobalError('Error al cargar roles');
     }
@@ -187,7 +189,7 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              Autoridades Académicas
+              Asignaciones institucionales
             </h2>
             <p className="text-sm text-gray-500 mt-0.5">{institucion.nombre}</p>
           </div>
@@ -239,7 +241,7 @@ export default function AutoridadAcademicaModal({ isOpen, onClose, institucion, 
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-sm hover:bg-primary/90 transition-colors font-medium"
               >
                 <span className="material-symbols-outlined text-lg">add</span>
-                Asignar autoridad
+                Asignar nuevo
               </button>
             </div>
           )}

@@ -94,8 +94,8 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
       sections.push({ title: 'Administración', items: adminItems });
     }
 
-    // Mi Institución (contextual)
-    if (institucionId) {
+    // Mi Institución (contextual — solo admin)
+    if (institucionId && hasRole(ROLES.ADMINISTRADOR)) {
       const institucionItems: MenuLink[] = [];
       institucionItems.push({
         icon: 'menu_book',

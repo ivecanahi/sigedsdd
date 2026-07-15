@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Button, ConfirmDialog, Alert, PageHeader, SearchInput } from '../../../components/ui';
 import { planEstudioApi } from '../services/planEstudioApi';
 import type { PlanEstudio, PlanEstudioFormData } from '../types/planEstudio';
 import PlanEstudioTable from '../components/PlanEstudioTable';
@@ -16,7 +17,6 @@ export default function PlanEstudioListPage() {
   const [pageSize, setPageSize] = useState(10);
   const [ordering, setOrdering] = useState('nombre');
   const [searchTerm, setSearchTerm] = useState('');
-  const [localSearch, setLocalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,11 +60,6 @@ export default function PlanEstudioListPage() {
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     setPage(1);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSearch(localSearch);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -133,96 +128,53 @@ export default function PlanEstudioListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header block */}
-      <section className="bg-heading-block border border-slate-200 rounded-sm p-6 w-full shadow-sm border-t-4 border-t-heading-block-border relative flex flex-col justify-center overflow-hidden">
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold mb-2 tracking-tight text-slate-900">
-            Planes de Estudio
-          </h2>
-          <p className="text-slate-600 text-base">
-            Administre los planes de estudio de la institución
-          </p>
-        </div>
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-[0.07] pointer-events-none">
-          <span className="material-symbols-outlined text-9xl text-primary">menu_book</span>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Planificación"
+        title="Planes de Estudio"
+        description="Administre los planes de estudio de la institución"
+        icon="menu_book"
+        actions={
+          <Button icon="add" onClick={handleNewPlan}>
+            Nuevo Plan de Estudio
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="bg-danger/10 text-danger px-4 py-3 rounded-sm text-sm">
-          {error}
-        </div>
-      )}
+      {error && <Alert tone="danger" title="Error">{error}</Alert>}
 
       {activePlanAlert && (
-        <div className="bg-warning/10 border border-warning text-warning px-4 py-3 rounded-sm text-sm flex items-center justify-between">
-          <span>Advertencia: Ya existe un plan de estudio activo. Solo se permite un plan activo por institución.</span>
-          <button
-            onClick={() => setActivePlanAlert(false)}
-            className="px-3 py-1 rounded-sm hover:bg-warning/20 transition-colors font-medium"
-          >
-            Cerrar
-          </button>
-        </div>
+        <Alert
+          tone="warning"
+          title="Advertencia"
+          onDismiss={() => setActivePlanAlert(false)}
+        >
+          Ya existe un plan de estudio activo. Solo se permite un plan activo por institución.
+        </Alert>
       )}
 
-      {deleteTarget && (
-        <div className="bg-warning/10 border border-warning text-warning px-4 py-3 rounded-sm text-sm flex items-center justify-between">
-          <span>Eliminar plan de estudio &quot;{deleteTarget.nombre}&quot;?</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDeleteTarget(null)}
-              className="px-3 py-1 rounded-sm hover:bg-warning/20 transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="px-3 py-1 bg-danger text-white rounded-sm hover:bg-danger/90 transition-colors font-medium"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar plan de estudio"
+        description={
+          <>
+            ¿Eliminar <strong>{deleteTarget?.nombre}</strong>? Esta acción no se puede deshacer.
+          </>
+        }
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        tone="danger"
+      />
 
       {/* Action bar */}
       <div className="flex items-center justify-between gap-4">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 max-w-xl">
-          <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-            <input
-              type="text"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Buscar por nombre..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-          >
-            Buscar
-          </button>
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => { setLocalSearch(''); handleSearch(''); }}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-            >
-              Limpiar
-            </button>
-          )}
-        </form>
-
-        <button
-          onClick={handleNewPlan}
-          className="flex items-center gap-2 px-8 py-3.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-bold"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Nuevo Plan de Estudio
-        </button>
+        <SearchInput
+          value={searchTerm}
+          onSearch={handleSearch}
+          placeholder="Buscar por nombre..."
+          className="max-w-xl flex-1"
+        />
       </div>
 
       {/* Table */}

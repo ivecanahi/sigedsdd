@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Button, ConfirmDialog, Alert, PageHeader, SearchInput } from '../../../components/ui';
 import { planEstudioApi } from '../services/planEstudioApi';
 import { gradoEscolarApi } from '../services/gradoEscolarApi';
 import { asignaturaApi } from '../services/asignaturaApi';
@@ -29,7 +30,6 @@ export default function GradoAsignaturaPage() {
   const [pageSize, setPageSize] = useState(10);
   const [ordering, setOrdering] = useState('nombre');
   const [searchTerm, setSearchTerm] = useState('');
-  const [localSearch, setLocalSearch] = useState('');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingGrado, setEditingGrado] = useState<GradoEscolar | null>(null);
@@ -112,11 +112,6 @@ export default function GradoAsignaturaPage() {
     setPage(1);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSearch(localSearch);
-  };
-
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
@@ -182,96 +177,50 @@ export default function GradoAsignaturaPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header block */}
-      <section className="bg-heading-block border border-slate-200 rounded-sm p-6 w-full shadow-sm border-t-4 border-t-heading-block-border relative flex flex-col justify-center overflow-hidden">
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold mb-2 tracking-tight text-slate-900">
-            Grados y Asignaturas
-          </h2>
-          <p className="text-slate-600 text-base">
-            Plan: {planNombre}
-          </p>
-        </div>
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-[0.07] pointer-events-none">
-          <span className="material-symbols-outlined text-9xl text-primary">class</span>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Planificación"
+        title="Grados y Asignaturas"
+        description={`Plan: ${planNombre}`}
+        icon="class"
+      />
 
-      {error && (
-        <div className="bg-danger/10 text-danger px-4 py-3 rounded-sm text-sm">
-          {error}
-        </div>
-      )}
+      {error && <Alert tone="danger" title="Error">{error}</Alert>}
 
-      {deleteTarget && (
-        <div className="bg-warning/10 border border-warning text-warning px-4 py-3 rounded-sm text-sm flex items-center justify-between">
-          <span>Eliminar grado escolar &quot;{deleteTarget.nombre}&quot;?</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDeleteTarget(null)}
-              className="px-3 py-1 rounded-sm hover:bg-warning/20 transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="px-3 py-1 bg-danger text-white rounded-sm hover:bg-danger/90 transition-colors font-medium"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar grado escolar"
+        description={
+          <>
+            ¿Eliminar <strong>{deleteTarget?.nombre}</strong>? Esta acción no se puede deshacer.
+          </>
+        }
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        tone="danger"
+      />
 
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
-        >
-          <span className="material-symbols-outlined text-sm">arrow_back</span>
+        <Button variant="ghost" icon="arrow_back" onClick={() => navigate(-1)}>
           Volver
-        </button>
-        <button
-          onClick={() => { setEditingGrado(null); setFormOpen(true); }}
-          className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-bold"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
+        </Button>
+        <Button icon="add" onClick={() => { setEditingGrado(null); setFormOpen(true); }}>
           Nuevo Grado Escolar
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Grados table */}
         <div>
-          <h3 className="text-lg font-bold text-slate-900 mb-3">Grados Escolares</h3>
+          <h3 className="text-lg font-bold text-ink mb-3">Grados Escolares</h3>
 
-          <form onSubmit={handleSearchSubmit} className="flex gap-2 mb-3">
-            <div className="relative flex-1">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-              <input
-                type="text"
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="Buscar por nombre..."
-                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-            >
-              Buscar
-            </button>
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => { setLocalSearch(''); handleSearch(''); }}
-                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-              >
-                Limpiar
-              </button>
-            )}
-          </form>
+          <SearchInput
+            value={searchTerm}
+            onSearch={handleSearch}
+            placeholder="Buscar por nombre..."
+            className="mb-3"
+          />
 
           {isLoading && grados.length === 0 ? (
             <div className="flex items-center justify-center h-64">

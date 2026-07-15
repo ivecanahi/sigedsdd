@@ -1,28 +1,220 @@
 @import "tailwindcss";
 
+/* ============================================================
+   SIGED · Sistema de diseño
+   Identidad: violeta institucional + índigo de acción.
+   Tipografía: Plus Jakarta Sans (títulos) + Inter (interfaz).
+   ============================================================ */
+
 @theme {
-  --color-background: #f3f4f6;
-  --color-surface: #ffffff;
+  /* --- Tipografía --- */
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  /* --- Marca: índigo de acción --- */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #7c8ff8;
+  --color-primary-500: #4c6ef5;
+  --color-primary-600: #3b5bdb;
+  --color-primary-700: #2f49b0;
+  --color-primary-800: #27398a;
+  --color-primary-900: #1e2a63;
   --color-primary: #4c6ef5;
   --color-secondary: #4f00d9;
   --color-accent: #6d5efc;
-  --color-success: #16a34a;
-  --color-warning: #eab308;
-  --color-danger: #dc2626;
-  --color-header-top: #ffffff;
+
+  /* --- Marca: violeta institucional (navegación) --- */
+  --color-brand-700: #330099;
+  --color-brand-800: #26046f;
+  --color-brand-900: #190449;
   --color-sidebar: #330099;
-  --color-sidebar-active: #7399FF;
-  --color-sidebar-hover: #6488EE;
-  --color-heading-block: #F8FAFC;
+  --color-sidebar-active: #7399ff;
+  --color-sidebar-hover: #6488ee;
+
+  /* --- Superficies y texto --- */
+  --color-background: #f4f5fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-border: #e4e7ee;
+  --color-border-strong: #cbd5e1;
+  --color-ink: #10142c;
+  --color-ink-muted: #5b6478;
+  --color-ink-subtle: #939cb0;
+
+  /* --- Semánticos --- */
+  --color-success: #15803d;
+  --color-success-soft: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #c22626;
+  --color-danger-soft: #fee2e2;
+  --color-info: #1d4ed8;
+  --color-info-soft: #dbeafe;
+
+  /* --- Compatibilidad con tokens previos --- */
+  --color-header-top: #ffffff;
+  --color-heading-block: #f8fafc;
   --color-heading-block-border: #4c6ef5;
+
+  /* --- Sombras --- */
+  --shadow-card: 0 1px 2px 0 rgb(16 20 44 / 0.04), 0 1px 3px 0 rgb(16 20 44 / 0.06);
+  --shadow-raised: 0 4px 12px -2px rgb(16 20 44 / 0.08), 0 2px 6px -2px rgb(16 20 44 / 0.05);
+  --shadow-pop: 0 24px 48px -12px rgb(16 20 44 / 0.25);
+
+  /* --- Movimiento --- */
+  --animate-fade-in: fade-in 0.18s ease-out both;
+  --animate-scale-in: scale-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slide-up 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-in-right: slide-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.97) translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
 }
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--color-background);
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background-color: var(--color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  /* Foco visible y consistente en toda la aplicación */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-primary-100);
+    color: var(--color-primary-900);
+  }
+
+  /* Números alineados en tablas y métricas */
+  table,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Barras de desplazamiento discretas */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-subtle);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-#root {
-  min-height: 100vh;
+@layer components {
+  /* Iconografía.
+     Se define una clase propia en lugar de usar `.material-symbols-outlined`:
+     la hoja de Google Fonts no está en capas y, por cascada, ganaría a las
+     utilidades de Tailwind, fijando todos los íconos a 24px. Con una clase
+     propia dentro de `components`, `text-[18px]` y similares sí se aplican. */
+  .ms-icon {
+    font-family: "Material Symbols Outlined", sans-serif;
+    font-size: 1.25em;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: "liga";
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  .ms-icon-filled {
+    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+
+  .ms-icon-bold {
+    font-variation-settings: "FILL" 0, "wght" 600, "GRAD" 0, "opsz" 24;
+  }
+
+  /* Firma visual: trama sutil del panel institucional */
+  .brand-weave {
+    background-image:
+      radial-gradient(circle at 100% 0%, rgb(115 153 255 / 0.35), transparent 55%),
+      radial-gradient(circle at 0% 100%, rgb(79 0 217 / 0.5), transparent 50%),
+      linear-gradient(180deg, var(--color-brand-700) 0%, var(--color-brand-900) 100%);
+  }
+
+  .surface-grid {
+    background-image:
+      linear-gradient(to right, rgb(16 20 44 / 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(16 20 44 / 0.035) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }

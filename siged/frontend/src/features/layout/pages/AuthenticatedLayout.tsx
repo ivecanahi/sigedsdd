@@ -14,16 +14,20 @@ export default function AuthenticatedLayout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface">
+    <div className="min-h-screen flex flex-col bg-background">
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <TopBar onMenuToggle={() => setSidebarOpen(true)} />
 
-      <main className="flex-grow">
-        <Outlet />
+      <main className="flex-grow px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-[1400px] space-y-6">
+          <Outlet />
+        </div>
       </main>
 
-      <footer className="p-8 text-center text-xs text-gray-400 mt-10">
-        @ {new Date().getFullYear()} {APP_NAME}
+      <footer className="border-t border-border px-6 py-5">
+        <p className="mx-auto max-w-[1400px] text-center text-xs text-ink-subtle sm:text-left">
+          © {new Date().getFullYear()} {APP_NAME}
+        </p>
       </footer>
     </div>
   );

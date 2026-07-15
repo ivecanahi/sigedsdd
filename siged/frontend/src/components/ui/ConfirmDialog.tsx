@@ -46,19 +46,24 @@ export default function ConfirmDialog({
       onClose={onCancel}
       title={title}
       size="sm"
-      icon={tone === 'danger' ? 'delete' : 'help'}
+      icon={tone === 'danger' ? 'warning' : 'help'}
       footer={
         <>
-          <Button variant="secondary" onClick={onCancel} disabled={isWorking}>
+          <Button variant="ghost" onClick={onCancel} disabled={isWorking}>
             {cancelLabel}
           </Button>
-          <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={handleConfirm} loading={isWorking}>
+          <Button
+            variant={tone === 'danger' ? 'danger' : 'primary'}
+            onClick={handleConfirm}
+            loading={isWorking}
+            icon={tone === 'danger' ? 'delete' : undefined}
+          >
             {confirmLabel}
           </Button>
         </>
       }
     >
-      <div className="text-sm leading-relaxed text-ink-muted">{description}</div>
+      <div className="text-[15px] leading-relaxed text-ink">{description}</div>
     </Modal>
   );
 }

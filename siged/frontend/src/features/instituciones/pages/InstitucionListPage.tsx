@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button, ConfirmDialog, Alert, PageHeader, SearchInput, TableSkeleton } from '../../../components/ui';
+import { Button, ConfirmDialog, PageHeader, SearchInput, TableSkeleton, useToast } from '../../../components/ui';
 import { institucionApi } from '../services/institucionApi';
 import type { Institucion, InstitucionFormData } from '../types/institucion';
 import InstitucionTable from '../components/InstitucionTable';
@@ -14,7 +14,7 @@ export default function InstitucionListPage() {
   const [ordering, setOrdering] = useState('nombre');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingInstitucion, setEditingInstitucion] = useState<Institucion | null>(null);
@@ -24,7 +24,6 @@ export default function InstitucionListPage() {
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const response = await institucionApi.list({
         page,
@@ -35,11 +34,11 @@ export default function InstitucionListPage() {
       setData(response.results);
       setCount(response.count);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar instituciones');
+      toast.error(err instanceof Error ? err.message : 'Error al cargar instituciones');
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, ordering, searchTerm]);
+  }, [page, pageSize, ordering, searchTerm, toast]);
 
   useEffect(() => {
     fetchData();
@@ -84,9 +83,11 @@ export default function InstitucionListPage() {
       await institucionApi.delete(deleteTarget.id);
       setDeleteTarget(null);
       await fetchData();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al eliminar';
-      setError(message);
+    } catch {
+      toast.error(
+        `Operación fallida\nNo se pudo eliminar la institución "${deleteTarget.nombre}" debido a dependencias activas (ej. usuarios, cursos, registros financieros). Por favor, resuelva estas dependencias primero o contacte al administrador.`
+      );
+      setDeleteTarget(null);
     }
   };
 
@@ -127,17 +128,23 @@ export default function InstitucionListPage() {
         }
       />
 
-      {error && <Alert tone="danger" title="Error">{error}</Alert>}
-
       <ConfirmDialog
         isOpen={deleteTarget !== null}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         title="Eliminar institución"
         description={
-          <>
-            ¿Eliminar <strong>{deleteTarget?.nombre}</strong>? Esta acción no se puede deshacer.
-          </>
+          <div className="space-y-3">
+            <p>
+              ¿Está seguro de que desea eliminar la institución <strong className="text-ink">{deleteTarget?.nombre}</strong>?
+            </p>
+            <div className="rounded-lg bg-danger/5 border border-danger/20 p-3 text-sm text-danger">
+              <span className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+                <span>Esta acción no se puede deshacer. Si la institución tiene dependencias activas (usuarios, planes de estudio, registros), la eliminación fallará.</span>
+              </span>
+            </div>
+          </div>
         }
         confirmLabel="Eliminar"
         cancelLabel="Cancelar"

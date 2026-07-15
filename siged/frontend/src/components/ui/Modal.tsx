@@ -114,27 +114,27 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative flex max-h-[92vh] w-full animate-scale-in flex-col overflow-hidden rounded-t-2xl bg-surface shadow-pop sm:rounded-2xl ${SIZES[size]}`}
+        className={`relative flex max-h-[92vh] w-full animate-scale-in flex-col overflow-hidden rounded-t-2xl bg-surface shadow-2xl sm:rounded-2xl ${SIZES[size]}`}
       >
-        <header className="flex items-start gap-3 border-b border-border px-5 py-4 sm:px-6">
+        <header className="flex items-start gap-3 border-b border-border px-6 py-5 sm:px-8">
           {icon && (
-            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-danger/10 text-danger">
               <Icon name={icon} className="text-[20px]" />
             </span>
           )}
           <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="font-display text-lg font-bold text-ink">
+            <h2 id={titleId} className="font-display text-xl font-bold text-ink">
               {title}
             </h2>
-            {subtitle && <p className="mt-0.5 truncate text-sm text-ink-muted">{subtitle}</p>}
+            {subtitle && <p className="mt-1 truncate text-sm text-ink-muted">{subtitle}</p>}
           </div>
           <IconButton icon="close" label="Cerrar" onClick={onClose} className="-mr-1" />
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">{children}</div>
 
         {footer && (
-          <footer className="flex items-center justify-end gap-3 border-t border-border bg-surface-muted px-5 py-4 sm:px-6">
+          <footer className="flex items-center justify-end gap-3 border-t border-border bg-slate-50/80 px-6 py-5 sm:px-8">
             {footer}
           </footer>
         )}

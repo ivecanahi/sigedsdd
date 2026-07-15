@@ -93,13 +93,6 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
         path: '/instituciones',
         requiredRoles: [ROLES.ADMINISTRADOR],
       });
-      adminItems.push({
-        icon: 'group',
-        label: 'Gestión de Usuarios',
-        path: '/',
-        requiredRoles: [ROLES.ADMINISTRADOR],
-        disabled: true,
-      });
     }
     if (adminItems.length > 0) {
       sections.push({ title: 'Administración', items: adminItems });

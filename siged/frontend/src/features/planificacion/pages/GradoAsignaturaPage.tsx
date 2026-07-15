@@ -212,8 +212,8 @@ export default function GradoAsignaturaPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Grados table */}
-        <div>
-          <h3 className="text-lg font-bold text-ink mb-3">Grados Escolares</h3>
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+          <h3 className="text-lg font-bold text-ink mb-4">Grados Escolares</h3>
 
           <SearchInput
             value={searchTerm}
@@ -243,10 +243,11 @@ export default function GradoAsignaturaPage() {
         </div>
 
         {/* Right: Asignaturas section */}
-        <div>
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <AsignaturaSection
             asignaturas={asignaturas}
             selectedGradoNombre={selectedGrado?.nombre || null}
+            hasGrados={grados.length > 0}
             onCreate={handleCreateAsignatura}
             onUpdate={handleUpdateAsignatura}
             onDelete={handleDeleteAsignatura}

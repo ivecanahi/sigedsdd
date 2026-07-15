@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { Asignatura, AsignaturaFormData } from '../types/asignatura';
-import { Alert, Button, EmptyState } from '../../../components/ui';
+import { Alert, Button, EmptyState, Icon } from '../../../components/ui';
 import AsignaturaCard from './AsignaturaCard';
 
 interface AsignaturaSectionProps {
   asignaturas: Asignatura[];
   selectedGradoNombre: string | null;
+  hasGrados: boolean;
   onCreate: (data: AsignaturaFormData) => Promise<void>;
   onUpdate: (id: number, data: Partial<AsignaturaFormData>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
@@ -21,6 +22,7 @@ interface FormErrors {
 export default function AsignaturaSection({
   asignaturas,
   selectedGradoNombre,
+  hasGrados,
   onCreate,
   onUpdate,
   onDelete,
@@ -116,6 +118,8 @@ export default function AsignaturaSection({
     }
   };
 
+  const formDisabled = !hasGrados;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -123,11 +127,26 @@ export default function AsignaturaSection({
           Asignaturas {selectedGradoNombre && `- ${selectedGradoNombre}`}
         </h3>
         {!isEditing && (
-          <Button icon="add" size="sm" onClick={() => setIsEditing(true)}>
+          <Button icon="add" size="sm" onClick={() => setIsEditing(true)} disabled={formDisabled}>
             Nueva Asignatura
           </Button>
         )}
       </div>
+
+      {/* Blocked state: no grados registered */}
+      {formDisabled && (
+        <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50/50 p-4 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <Icon name="info" className="text-[24px] text-amber-500" />
+            <p className="text-sm font-semibold text-amber-800">
+              Debe registrar al menos un Grado Escolar antes de poder crear Asignaturas.
+            </p>
+            <p className="text-xs text-amber-600">
+              Use la sección &quot;Grados Escolares&quot; de la izquierda para crear el primer grado.
+            </p>
+          </div>
+        </div>
+      )}
 
       {globalError && !deleteTarget && (
         <Alert tone="danger" title="Error" onDismiss={() => setGlobalError(null)}>
@@ -168,7 +187,8 @@ export default function AsignaturaSection({
               type="text"
               value={formData.nombre}
               onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm ${
+              disabled={formDisabled}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-slate-100 disabled:cursor-not-allowed ${
                 errors.nombre ? 'border-danger' : 'border-slate-200'
               }`}
             />
@@ -184,7 +204,8 @@ export default function AsignaturaSection({
               min={0}
               value={formData.pp_semana_minimo}
               onChange={(e) => setFormData((prev) => ({ ...prev, pp_semana_minimo: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm ${
+              disabled={formDisabled}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-slate-100 disabled:cursor-not-allowed ${
                 errors.pp_semana_minimo ? 'border-danger' : 'border-slate-200'
               }`}
             />
@@ -193,10 +214,10 @@ export default function AsignaturaSection({
             )}
           </div>
           <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm} disabled={formDisabled}>
               Cancelar
             </Button>
-            <Button type="submit" size="sm" loading={isSubmitting}>
+            <Button type="submit" size="sm" loading={isSubmitting} disabled={formDisabled}>
               {editingAsignatura ? 'Actualizar' : 'Crear'}
             </Button>
           </div>

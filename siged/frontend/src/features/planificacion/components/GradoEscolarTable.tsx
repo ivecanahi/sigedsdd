@@ -116,8 +116,14 @@ export default function GradoEscolarTable({
           <tbody className="divide-y divide-slate-100">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
-                  No se encontraron grados escolares.
+                <td colSpan={6} className="px-4 py-12 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="material-symbols-outlined text-[36px] text-slate-300">group_off</span>
+                    <p className="text-sm font-medium text-slate-400">No hay grados escolares registrados</p>
+                    <p className="text-xs text-slate-400">
+                      Haga clic en &quot;Nuevo Grado Escolar&quot; para crear el primero.
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (

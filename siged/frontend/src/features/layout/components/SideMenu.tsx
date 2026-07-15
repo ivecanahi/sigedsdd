@@ -119,11 +119,6 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
       title: 'Configuración',
       items: [
         {
-          icon: 'person',
-          label: 'Mi Perfil',
-          path: '/',
-        },
-        {
           icon: 'logout',
           label: 'Cerrar Sesión',
           path: '#',
